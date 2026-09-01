@@ -14,7 +14,6 @@ import {
   PageHeader,
   Panel,
   SubgroupStatus,
-  verdictTone,
 } from "@/components/ui";
 import { fmt, fmtCi, fmtInt, fmtPct, humanLabel, shortHash } from "@/lib/format";
 import { useStore } from "@/lib/store";
