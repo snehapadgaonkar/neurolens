@@ -150,19 +150,25 @@ summary and a data-table alternative. Responsive order is preserved at every
 width: research-use warning → reliability/OOD → prediction → interval →
 explanation → provenance → action.
 
-Three checks cover the Next.js workspace, each rendering the real components
-against a live API rather than fixtures:
+Four checks render real front-end code against a live API rather than fixtures.
+Three cover the Next.js workspace; the fourth covers the built-in static SPA,
+which shares the API and would break identically on a field rename:
 
 ```bash
 cd web
-npm run check:render      # all 14 screens render live data
+npm run check:render      # all 14 Next.js screens render live data
 npm run check:shell       # shell chrome: banner, run switcher, nav
 npm run subgroup-check    # a case that actually has subgroup context
+npm run check:static      # all 13 static SPA screens, walked via its hash router
 ```
 
 `check:render` fails on React warnings (NaN SVG coordinates, duplicate keys) and
 on any literal `undefined` or `NaN` in the output — the silent symptom of a
-field name that does not match the API.
+field name that does not match the API. `check:static` applies the same
+`undefined`/`NaN` rule to the static SPA and also fails if a screen throws.
+
+`check:render`, `check:shell`, and `subgroup-check` need the Next.js dev server
+on `:3000`. `check:static` needs only `neurolens serve` on `:8000`.
 
 ---
 
@@ -216,6 +222,7 @@ From `web/`, once the API is running:
 | `npm run check:render` | mount all 14 screens against a live API and assert real data |
 | `npm run check:shell` | assert the shell chrome renders (banner, run switcher, nav) |
 | `npm run subgroup-check` | assert subgroup labels on a case that has subgroup context |
+| `npm run check:static` | walk all 13 built-in static SPA screens against a live API |
 
 ---
 
