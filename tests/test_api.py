@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import os
+import shutil
 
 import pytest
 
@@ -151,3 +153,70 @@ def test_every_figure_key_resolves_even_when_it_is_not_the_filename(figure_run, 
 
 def test_path_traversal_is_not_possible(client):
     assert client.get("/api/artifact/..%2f..%2f..%2fetc%2fpasswd").status_code == 404
+
+
+def test_run_discovery_ignores_nested_scratch_directories(smoke_run, tmp_path):
+    """A scratch tree under the runs root must not become selectable runs.
+
+    ``runs_root`` is walked for any directory holding ``audit_report.json``. When
+    a seed sweep or a temporary export nests its own runs one level down, a
+    recursive walk promotes all of them into the run switcher and lets one of
+    them be mistaken for the newest run.
+    """
+    root = tmp_path / "runs"
+    root.mkdir()
+    # One real run at the top level.
+    real = root / "20260101T000000Z-real"
+    shutil.copytree(smoke_run["run_dir"], real)
+
+    # Six scratch runs nested under a subdirectory, plus a deeper level.
+    scratch = root / "seedcheck"
+    for index in range(6):
+        nested = scratch / f"20260101T00000{index}Z-scratch"
+        nested.mkdir(parents=True)
+        shutil.copy(os.path.join(smoke_run["run_dir"], "audit_report.json"),
+                    os.path.join(nested, "audit_report.json"))
+    deep = scratch / "nested" / "deeper"
+    deep.mkdir(parents=True)
+    shutil.copy(os.path.join(smoke_run["run_dir"], "audit_report.json"),
+                os.path.join(deep, "audit_report.json"))
+
+    app_client = TestClient(create_app(runs_root=str(root)))
+    listed = app_client.get("/api/runs").json()["runs"]
+
+    assert len(listed) == 1, [r["run_id"] for r in listed]
+    assert app_client.get("/api/health").json()["n_runs"] == 1
+
+
+def test_health_reports_the_run_actually_served(smoke_run, tmp_path):
+    """``active_run`` must match what ``/api/report`` returns.
+
+    With ``--run-dir`` pinning an older run, health used to advertise the newest
+    run it could discover instead -- so the two endpoints disagreed about which
+    run the workspace was showing.
+    """
+    root = tmp_path / "runs"
+    root.mkdir()
+    pinned = root / "20260101T000000Z-pinned"
+    shutil.copytree(smoke_run["run_dir"], pinned)
+
+    # A newer run that must NOT be reported as active.
+    newer = root / "20260102T000000Z-newer"
+    shutil.copytree(smoke_run["run_dir"], newer)
+
+    app_client = TestClient(create_app(run_dir=str(pinned), runs_root=str(root)))
+    health = app_client.get("/api/health").json()
+    report = app_client.get("/api/report").json()
+
+    assert health["active_run"] == pinned.name
+    assert report["manifest"]["run_id"] == json.loads(
+        (pinned / "audit_report.json").read_text(encoding="utf-8")
+    )["manifest"]["run_id"]
+    # The newer run is still listed as available, just not active. Note the
+    # listing keys off the manifest's run_id, which both copies share, so the
+    # distinguishing field is the directory each entry resolves to.
+    assert health["n_runs"] == 2
+    listed = {os.path.basename(r["directory"])
+              for r in app_client.get("/api/runs").json()["runs"]}
+    assert listed == {pinned.name, newer.name}
+    assert health["active_run"] != newer.name

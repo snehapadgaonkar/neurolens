@@ -414,7 +414,12 @@ export function RiskCoverageChart({
   maeFull,
   summary,
 }: {
-  curve: { abstention: number; mae: number; n_kept: number }[];
+  curve: {
+    abstention_fraction: number;
+    coverage: number;
+    n_retained: number;
+    mae: number;
+  }[];
   maeFull: number;
   summary: string;
 }) {
@@ -429,7 +434,7 @@ export function RiskCoverageChart({
   const sx = (abstention: number) => pad.left + abstention * (width - pad.left - pad.right);
   const sy = (mae: number) => height - pad.bottom - ((mae - minY) / span) * (height - pad.top - pad.bottom);
   const path = curve
-    .map((point, index) => `${index === 0 ? "M" : "L"}${sx(point.abstention)},${sy(point.mae)}`)
+    .map((point, index) => `${index === 0 ? "M" : "L"}${sx(point.abstention_fraction)},${sy(point.mae)}`)
     .join(" ");
 
   return (
@@ -457,8 +462,8 @@ export function RiskCoverageChart({
         </text>
         <path d={path} fill="none" stroke={INK.primary} strokeWidth="2" strokeLinejoin="round" />
         {curve.map((point) => (
-          <circle key={point.abstention} cx={sx(point.abstention)} cy={sy(point.mae)} r="2.6" fill={INK.primary}>
-            <title>{`${fmt(point.abstention * 100, 0)}% abstained · MAE ${fmt(point.mae, 3)} · n kept ${point.n_kept}`}</title>
+          <circle key={point.abstention_fraction} cx={sx(point.abstention_fraction)} cy={sy(point.mae)} r="2.6" fill={INK.primary}>
+            <title>{`${fmt(point.abstention_fraction * 100, 0)}% abstained · MAE ${fmt(point.mae, 3)} · n kept ${point.n_retained}`}</title>
           </circle>
         ))}
         {[0, 0.25, 0.5, 0.75, 1].map((tick) => (

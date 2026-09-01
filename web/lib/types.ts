@@ -297,7 +297,12 @@ export interface Trust {
   };
   risk_coverage: {
     n: number;
-    curve: { abstention: number; mae: number; n_kept: number }[];
+    curve: {
+      abstention_fraction: number;
+      coverage: number;
+      n_retained: number;
+      mae: number;
+    }[];
     aurc: number;
     mae_full: number;
     mae_at_50pct_abstention: number;
@@ -370,7 +375,9 @@ export interface ExplanationCase {
   absolute_error: number;
   uncertainty: number;
   interval: [number, number];
-  subgroup_context: { axis: string; level: string; n: number; status?: string }[];
+  // An axis -> level map, as recorded by the explanation, e.g. {"sex": "male"}.
+  // This is NOT the same shape as CaseDetail.subgroup_context.
+  subgroup_context: Record<string, string>;
 }
 
 export interface GlobalImportance {
@@ -442,7 +449,9 @@ export interface CaseDetail {
   prediction: CaseRow;
   explanation: ExplanationCase | null;
   units: string;
-  subgroup_context: { axis: string; level: string; n: number }[];
+  // The full fairness rows for the subgroups this patient belongs to. The
+  // subgroup label lives in `subgroup`, not `level`.
+  subgroup_context: FairnessRow[];
   research_use_notice: string;
   causation_notice: string;
 }

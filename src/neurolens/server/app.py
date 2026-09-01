@@ -70,13 +70,20 @@ def create_app(run_dir: Optional[str] = None, runs_root: str = "runs") -> FastAP
 
     # ------------------------------------------------------------------ #
     def _run_dirs() -> List[str]:
+        """Completed run directories, newest first.
+
+        Only immediate children of ``runs_root`` count as runs. Recursing would
+        let a nested scratch directory -- a seed sweep, a temporary export --
+        show up in the run switcher and be mistaken for the newest run.
+        """
         root = state["runs_root"]
         if not os.path.isdir(root):
             return []
         found: List[str] = []
-        for base, _dirs, files in os.walk(root):
-            if "audit_report.json" in files:
-                found.append(base)
+        for name in os.listdir(root):
+            candidate = os.path.join(root, name)
+            if os.path.isfile(os.path.join(candidate, "audit_report.json")):
+                found.append(candidate)
         return sorted(found, reverse=True)
 
     def _active_run_dir(explicit: Optional[str] = None) -> str:
@@ -113,9 +120,20 @@ def create_app(run_dir: Optional[str] = None, runs_root: str = "runs") -> FastAP
     # ------------------------------------------------------------------ #
     @app.get("/api/health")
     def health() -> Dict[str, Any]:
+        """Report the run that is actually being served.
+
+        ``active_run`` must match what ``/api/report`` returns. Reporting the
+        newest discovered run instead would let ``--run-dir`` pin one run while
+        health advertises a different one -- which is exactly what a reviewer
+        comparing the two endpoints would catch.
+        """
         found = _run_dirs()
+        try:
+            active = os.path.basename(_active_run_dir())
+        except HTTPException:
+            active = None
         return {"status": "ok", "runs_root": state["runs_root"], "n_runs": len(found),
-                "active_run": os.path.basename(found[0]) if found else None,
+                "active_run": active,
                 "research_use_notice": RESEARCH_USE_NOTICE}
 
     @app.get("/api/runs")

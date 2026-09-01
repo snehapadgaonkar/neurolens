@@ -1,0 +1,49 @@
+// Mount the real Shell to confirm the persistent research banner + nav render.
+const { JSDOM } = require("jsdom");
+const path = require("path");
+const fs = require("fs");
+const esbuild = require("esbuild");
+const WEB = path.resolve(__dirname, "..", "..");
+const ORIGIN = "http://127.0.0.1:3000";
+const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: ORIGIN + "/", pretendToBeVisual: true });
+for (const [k,v] of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,Element:dom.window.Element,Node:dom.window.Node,SVGElement:dom.window.SVGElement,getComputedStyle:dom.window.getComputedStyle})) global[k]=v;
+global.requestAnimationFrame=(cb)=>setTimeout(()=>cb(Date.now()),0);
+global.IS_REACT_ACT_ENVIRONMENT=true;
+const nodeFetch=global.fetch;
+global.fetch=(i,init)=>nodeFetch(typeof i==="string"&&!i.startsWith("http")?ORIGIN+i:i,init);
+const shim=path.join(WEB,"scripts/render-check/nav-shim.js");
+const linkShim=path.join(WEB,"scripts/render-check/link-shim.js");
+const entrySrc=path.join(WEB,"scripts/render-check/_shell-entry.tsx");
+fs.writeFileSync(entrySrc,
+`import {createRoot} from "react-dom/client";
+import {act} from "react";
+import {createElement} from "react";
+import {StoreProvider} from "@/lib/store";
+import {Shell} from "@/components/shell";
+export async function mount(){
+  const host=document.createElement("div");
+  document.body.appendChild(host);
+  const root=createRoot(host);
+  await act(async()=>{root.render(createElement(StoreProvider,null,createElement(Shell,null,createElement("main",null,"content"))));});
+  for(let i=0;i<30;i++){await act(async()=>{await new Promise(r=>setTimeout(r,50));});if(host.textContent.length>300)break;}
+  const t=host.textContent||""; root.unmount(); return t;
+}`);
+(async()=>{
+  await esbuild.build({entryPoints:[entrySrc],bundle:true,outfile:path.join(WEB,"scripts/render-check/_shell.cjs"),platform:"node",format:"cjs",target:"node20",jsx:"automatic",define:{"process.env.NODE_ENV":'"development"'},alias:{"@":WEB,"next/navigation":shim,"next/link":linkShim},external:["react","react-dom","react-dom/client"],logLevel:"error"});
+  const text=await require(path.join(WEB,"scripts/render-check/_shell.cjs")).mount();
+  const health=await (await nodeFetch(ORIGIN+"/api/health")).json();
+  const checks=[
+    ["research-use banner", "research prototype" in {} || text.includes("research prototype")],
+    // The switcher shows runIdLabel(...), a human date + dataset, not the raw id.
+    ["run switcher label", (()=>{const m=/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z-(.*)$/.exec(health.active_run);if(!m)return text.includes(health.active_run);const date=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5]));return text.includes(date.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"})+" \u00b7 "+m[7]);})()],
+    ["Build nav", text.includes("Build")],
+    ["Evaluate nav", text.includes("Evaluate")],
+    ["Inspect nav", text.includes("Inspect")],
+    ["Release nav", text.includes("Release")],
+    ["skip link", text.toLowerCase().includes("skip")],
+  ];
+  let fail=0;
+  for(const [n,ok] of checks){ if(!ok)fail++; console.log(`  ${ok?"PASS":"FAIL"}  ${n}`); }
+  console.log(fail===0?`\nshell chrome renders (chars=${text.length})`:`\n${fail} shell check(s) failed`);
+  process.exit(fail?1:0);
+})();

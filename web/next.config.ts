@@ -14,8 +14,8 @@ const BACKEND = process.env.NEUROLENS_API ?? "http://127.0.0.1:8000";
 const nextConfig: NextConfig = {
   async rewrites() {
     return [
-      { source: "/api/:path*", destination: `${BACKEND}/api/:path` },
-      { source: "/static/:path*", destination: `${BACKEND}/static/:path` },
+      { source: "/api/:path*", destination: `${BACKEND}/api/:path*` },
+      { source: "/static/:path*", destination: `${BACKEND}/static/:path*` },
     ];
   },
   // The sandbox preview serves this app from a proxied host; without this the

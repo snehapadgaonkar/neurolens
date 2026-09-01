@@ -326,9 +326,9 @@ export default function CasePage() {
           {detail.subgroup_context.length ? (
             <ul className="space-y-2">
               {detail.subgroup_context.map((item) => (
-                <li key={`${item.axis}-${item.level}`} className="flex flex-wrap items-center justify-between gap-2">
+                <li key={`${item.axis}-${item.subgroup}`} className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-body text-ink-900">
-                    {humanLabel(item.level)}
+                    {humanLabel(item.subgroup)}
                     <span className="text-ink-500"> · {humanLabel(item.axis)}</span>
                   </span>
                   <span className="mono text-body-sm text-ink-600">n={fmtInt(item.n)}</span>
