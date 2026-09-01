@@ -28,15 +28,25 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e ".[api,dev]"
 ```
 
-Requires Python ≥ 3.9. No build step, no GPU, no Node toolchain.
+Requires Python ≥ 3.9. No GPU. The pipeline and the API need no Node
+toolchain; only the optional Next.js workspace in `web/` does (Node ≥ 20).
 
 ## Quickstart
 
 ```bash
 neurolens fetch-data --dataset openneuro-ds004856   # real CC0 data from OpenNeuro
 neurolens run --config configs/openneuro-ds004856.yaml
-neurolens serve --runs-root runs                    # evidence workspace UI
+neurolens serve --runs-root runs                    # API + built-in workspace on :8000
 ```
+
+For the richer Next.js workspace, run the API as above and then:
+
+```bash
+cd web && npm install && npm run dev                # workspace on :3000
+```
+
+`web/` proxies `/api/*` and `/static/*` to the API (override the target with
+`NEUROLENS_API`), so the browser never addresses the backend directly.
 
 `run` writes a self-contained audit package to `runs/<run_id>/`:
 
@@ -57,7 +67,7 @@ figures/            eight evidence figures
 Verify the installation end to end:
 
 ```bash
-pytest                    # 110 tests, all on real data
+pytest                    # 113 tests, all on real data
 python scripts/smoke_test.py
 ```
 
@@ -119,15 +129,40 @@ degradation budget printed alongside the choice.
 
 ## Evidence workspace UI
 
-`neurolens serve` hosts a static single-page app: no npm, no bundler,
-hand-rolled SVG charts. Screens are grouped **Workspace / Build / Evaluate /
-Inspect / Release**, with a persistent research-use banner, a run switcher, and
-a provenance strip.
+There are two front ends over the same read-only API. Neither duplicates the
+other's job: the built-in one needs no toolchain at all, the Next.js one is the
+fuller workspace.
 
-Every subgroup metric shows n, CI, gap, and adequacy status. Charts have an
-accessible text summary and a data-table alternative. Responsive order is
-preserved at every width: research-use warning → reliability/OOD → prediction
-→ interval → explanation → provenance → action.
+**Built in** — `neurolens serve` also hosts a static single-page app at `/`: no
+npm, no bundler, hand-rolled SVG charts. Screens are grouped **Workspace /
+Build / Evaluate / Inspect / Release**, with a persistent research-use banner, a
+run switcher, and a provenance strip. Use this when you want the audit package
+open with nothing installed but the Python package.
+
+**Next.js workspace** — `web/` is a Next.js 16 App Router app with 14 screens
+under the same nav grouping, including a per-patient case view at
+`/cases/[patientId]`. It proxies `/api/*` and `/static/*` to the API, so the
+browser only ever talks to the workspace origin.
+
+Both honour the same rules. Every subgroup metric shows n, CI, gap, and adequacy
+status; there is no composite fairness score. Charts have an accessible text
+summary and a data-table alternative. Responsive order is preserved at every
+width: research-use warning → reliability/OOD → prediction → interval →
+explanation → provenance → action.
+
+Three checks cover the Next.js workspace, each rendering the real components
+against a live API rather than fixtures:
+
+```bash
+cd web
+npm run check:render      # all 14 screens render live data
+npm run check:shell       # shell chrome: banner, run switcher, nav
+npm run subgroup-check    # a case that actually has subgroup context
+```
+
+`check:render` fails on React warnings (NaN SVG coordinates, duplicate keys) and
+on any literal `undefined` or `NaN` in the output — the silent symptom of a
+field name that does not match the API.
 
 ---
 
@@ -151,7 +186,12 @@ src/neurolens/
 configs/          example configurations (open and HD pathways)
 notebooks/        Colab pipeline walkthrough
 scripts/          standalone smoke test
-tests/            110 tests, including real FreeSurfer fixtures
+tests/            113 tests, including real FreeSurfer fixtures
+web/              Next.js 16 workspace (App Router, TypeScript, Tailwind v4)
+  app/(workspace) 14 screens grouped Workspace / Build / Evaluate / Inspect / Release
+  components/     shell chrome, UI primitives, hand-rolled SVG charts, data table
+  lib/            API client, store, types mirroring the live payload, formatters
+  scripts/        render checks that mount the real components against a live API
 ```
 
 ## Commands
@@ -163,8 +203,19 @@ tests/            110 tests, including real FreeSurfer fixtures
 | `neurolens run [--config PATH]` | run the full audit pipeline |
 | `neurolens report RUN_DIR` | re-render reports for an existing run |
 | `neurolens model-card RUN_DIR` | re-render the model card |
-| `neurolens serve --runs-root runs` | serve the evidence workspace |
+| `neurolens serve --runs-root runs` | serve the API and the built-in workspace on `:8000` |
+| `neurolens serve --run-dir RUN_DIR` | pin the workspace to one run instead of the newest |
 | `neurolens smoke-test` | fast end-to-end verification |
+
+From `web/`, once the API is running:
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Next.js workspace on `:3000`, proxying `/api/*` to the API |
+| `npm run build` | production build and type check |
+| `npm run check:render` | mount all 14 screens against a live API and assert real data |
+| `npm run check:shell` | assert the shell chrome renders (banner, run switcher, nav) |
+| `npm run subgroup-check` | assert subgroup labels on a case that has subgroup context |
 
 ---
 
