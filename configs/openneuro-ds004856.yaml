@@ -1,0 +1,66 @@
+# NeuroLens default configuration — open data, zero-barrier access.
+#
+# Dataset: Dallas Lifespan Brain Study (ds004856) on OpenNeuro, CC0 public
+# domain, no registration and no data use agreement required. Only the
+# participants table is fetched (see DATA.md), so this run has longitudinal
+# MMSE and demographics but no imaging or genetic features. That is recorded in
+# the QC ledger and surfaces as a limitation, never as a silently imputed value.
+#
+# Run with:
+#   neurolens fetch-data --dataset openneuro-ds004856
+#   neurolens run --config configs/openneuro-ds004856.yaml
+
+data:
+  dataset: openneuro-ds004856
+  data_dir: data/raw/ds004856
+
+target:
+  outcome_measure: mmse
+  index_session: W1
+  outcome_session: W2
+  annualize: true
+  sign_convention: decline_positive
+  min_followup_years: 1.0
+  stage_measure: mmse
+  stage_cutpoints: [21.0, 27.0]
+  stage_labels: [moderate_or_worse, mild, no_impairment]
+  stage_definition: mmse-standard-cutpoints
+
+features:
+  modalities: [mri, genetics, clinical, demographic]
+  clinical_variables: [mmse, bmi_w1]
+  demographic_variables: [age_at_index, sex, education_years, handedness_score]
+  genetic_variables: [cag_repeat_length]
+  use_normalized_volumes: true
+  use_raw_volumes: false
+
+fairness:
+  axes: [sex, age_strata, education_strata, race, ethnicity]
+  intersectional_axes: [[sex, age_strata]]
+  min_subgroup_n: 30
+  min_reportable_n: 10
+  relative_gap_warn: 0.2
+  calibration_gap_warn: 0.05
+
+uncertainty:
+  alpha: 0.1
+  conformal: split
+  ood_method: mahalanobis_knn
+  ood_threshold_quantile: 0.95
+  # The DLBS is a healthy-ageing cohort, so the only predeclared shift axis
+  # available is age. There is no CAG repeat length here, so genetic-burden
+  # shift cannot be constructed and is reported as unavailable.
+  shift_cohort:
+    column: age_at_index
+    operator: ">="
+    value: 75.0
+
+model:
+  comparisons: [mri_only, multimodal]
+  families: [ridge, logistic, gradient_boosting]
+  mitigations: [none, reweighting, group_aware]
+  fairness_axis_for_mitigation: sex
+  max_overall_degradation: 0.05
+  ensemble_members: 8
+
+seed: 20240917

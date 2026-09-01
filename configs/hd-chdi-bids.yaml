@@ -1,0 +1,81 @@
+# NeuroLens configuration for the Huntington's disease pathway.
+#
+# ACCESS BARRIER — READ THIS FIRST. The harmonised HD BIDS collections
+# (TRACK-HD, TRACKOn-HD, PREDICT-HD, IMAGE-HD, HD-YAS, SHIELD-HD, PEARL-HD,
+# LONGPDE10) are distributed by the CHDI Foundation under a data use agreement
+# obtained through Enroll-HD (https://www.enroll-hd.org/for-researchers/datasets/).
+# They are NOT open data and are not redistributable. NeuroLens never downloads,
+# caches, or mirrors them, and this repository ships none of that data.
+#
+# To use this configuration you must already hold an approved DUA and have the
+# BIDS collection on local disk, with level-2 processed derivatives (FreeSurfer
+# outputs) present under `derivatives/`.
+#
+# Run with:
+#   neurolens run --config configs/hd-chdi-bids.yaml \
+#                 --data-dir /path/to/your/local/hd-bids
+#
+# Everything downstream of ingestion is identical to the open pathway: the same
+# cohort builder, the same leakage-free split, the same fairness audit, and the
+# same audit report. Only the loader differs.
+
+data:
+  dataset: chdi-hd-bids
+  data_dir: data/local/hd-bids
+
+target:
+  # PREDICT-HD / TRACK-HD report UHDRS Total Motor Score and Total Functional
+  # Capacity. TMS is the standard continuous progression outcome; TFC drives the
+  # ordinal stage. Cutpoints below are the published TFC thresholds and are
+  # predeclared here so they cannot be tuned on the test split.
+  outcome_measure: uhdrs_tms
+  index_session: ses-01
+  outcome_session: ses-02
+  annualize: true
+  sign_convention: decline_positive
+  min_followup_years: 0.9
+  stage_measure: total_functional_capacity
+  stage_cutpoints: [7.0, 11.0]
+  stage_labels: [late, early, premanifest_or_normal]
+  stage_definition: tfc-published-thresholds
+
+features:
+  modalities: [mri, genetics, clinical, demographic]
+  clinical_variables: [udhrs_tms, total_functional_capacity, symbol_digit_modality]
+  demographic_variables: [age_at_index, sex, education_years]
+  genetic_variables: [cag_repeat_length]
+  mri_systems:
+    - basal ganglia
+    - ventricular
+    - thalamus
+    - medial temporal
+    - cortex
+    - white matter
+  use_normalized_volumes: true
+
+fairness:
+  # Genetic burden is the primary fairness axis for HD: CAG repeat length is the
+  # causal driver of onset age, so subgrouping by it is the scientifically
+  # meaningful audit rather than a demographic formality.
+  axes: [cag_burden_strata, disease_stage, sex, age_strata]
+  intersectional_axes: [[cag_burden_strata, disease_stage]]
+  min_subgroup_n: 30
+  min_reportable_n: 10
+
+uncertainty:
+  alpha: 0.1
+  conformal: mondrian
+  mondrian_axis: cag_burden_strata
+  shift_cohort:
+    column: cag_repeat_length
+    operator: ">="
+    value: 43.0
+
+model:
+  comparisons: [mri_only, multimodal]
+  families: [ridge, logistic, ordinal, gradient_boosting]
+  mitigations: [none, reweighting, group_aware]
+  fairness_axis_for_mitigation: cag_burden_strata
+  ensemble_members: 8
+
+seed: 20240917

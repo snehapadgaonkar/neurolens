@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# NeuroLens generated artifacts.
+# Real datasets are fetched into the top-level `data/` directory by
+# `neurolens fetch-data`; run artifacts are written by `neurolens run`.
+# Neither belongs in version control. The patterns are anchored to the repo
+# root so that the real test fixtures under `tests/data/` stay tracked.
+/data/
+/runs/
+/artifacts/
+*.joblib
+
+# Notebook checkpoints and Colab scratch space.
+.ipynb_checkpoints/
+scratch/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.next-swc/
+*.tsbuildinfo
+next-env.d.ts
+

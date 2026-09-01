@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   NeuroLens evidence workspace — design tokens
+   ==========================================================================
+   Every colour pairing used for text in this app was checked against WCAG 2.1:
+   body copy >= 4.5:1, focus indicators >= 3:1. Hairline borders (ink-200/300)
+   are decorative separators only and are never used as focus indicators.
+
+   Palette intent: an evidence workspace, not a dashboard. Cool slate ink on
+   near-white paper, one confident teal for actions and emphasis, and a
+   semantic set in which no status relies on hue alone — every status also
+   carries a label and an icon, so it survives colour-blind reading and
+   greyscale printing.
+   ========================================================================== */
+
+@theme {
+  /* Ink — cool slate with a trace of teal */
+  --color-ink-950: #0e1a20;
+  --color-ink-900: #13262e;
+  --color-ink-800: #1c3640;
+  --color-ink-700: #2a4a55; /* body text on paper — 9.51:1 */
+  --color-ink-600: #3e6472; /* secondary text — 6.42:1 */
+  --color-ink-500: #4e7382; /* muted text — 5.12:1 on paper, 4.58:1 on paper-100 */
+  --color-ink-400: #7d99a5;
+  --color-ink-300: #b4c7ce; /* hairline border only */
+  --color-ink-200: #d6e1e5; /* hairline border only */
+  --color-ink-100: #e9eff1;
+  --color-ink-50: #f4f8f9;
+
+  /* Paper */
+  --color-paper: #ffffff;
+  --color-paper-25: #fbfcfd;
+  --color-paper-50: #f6f9fa;
+  --color-paper-100: #eef3f5;
+
+  /* Primary — deep teal */
+  --color-primary-800: #0b474a;
+  --color-primary-700: #0f5f63; /* 7.40:1 on paper; also the focus ring colour */
+  --color-primary-600: #12767b; /* 5.38:1 on paper */
+  --color-primary-500: #17919a;
+  --color-primary-200: #b8e0de;
+  --color-primary-100: #dcf1f0;
+  --color-primary-50: #f0f9f8;
+
+  /* Semantic — always paired with a label and an icon, never hue alone */
+  --color-affirm-700: #1f6f4a;
+  --color-affirm-100: #e4f1e9;
+  --color-warn-700: #8a5300;
+  --color-warn-100: #fcf0da;
+  --color-insufficient-700: #4e5a63;
+  --color-insufficient-100: #e8ecef;
+  --color-risk-700: #97333c;
+  --color-risk-100: #f8e3e5;
+  --color-info-700: #2f4e8f;
+  --color-info-100: #e5eaf7;
+
+  /* Feature families */
+  --color-mri-700: #2f4e8f;
+  --color-mri-100: #e5eaf7;
+  --color-genetic-700: #5a4788;
+  --color-genetic-100: #ebe7f6;
+  --color-clinical-700: #4f6220;
+  --color-clinical-100: #edf0dd;
+  --color-demographic-700: #2a4a55;
+  --color-demographic-100: #e9eff1;
+
+  /* Type */
+  --font-sans: "IBM Plex Sans", "Inter", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "JetBrains Mono",
+    Menlo, Consolas, monospace;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(14, 26, 32, 0.05), 0 1px 3px rgba(14, 26, 32, 0.07);
+  --shadow-2: 0 2px 4px rgba(14, 26, 32, 0.04), 0 12px 28px rgba(14, 26, 32, 0.1);
+  --shadow-3: 0 8px 20px rgba(14, 26, 32, 0.14), 0 24px 60px rgba(14, 26, 32, 0.16);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-paper-50);
+    color: var(--color-ink-700);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    font-feature-settings: "cv05" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* 3:1 focus indicators, visible on every surface */
+  :focus-visible {
+    outline: 2px solid var(--color-primary-700);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background: var(--color-primary-100);
+    color: var(--color-primary-800);
+  }
+
+  h1, h2, h3, h4 {
+    color: var(--color-ink-950);
+    letter-spacing: -0.011em;
+  }
+}
+
+@layer utilities {
+  /* Type scale from DESIGN.md */
+  .text-display { font-size: 32px; line-height: 38px; font-weight: 600; letter-spacing: -0.02em; }
+  .text-h1 { font-size: 24px; line-height: 30px; font-weight: 600; letter-spacing: -0.017em; }
+  .text-h2 { font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -0.014em; }
+  .text-h3 { font-size: 16px; line-height: 22px; font-weight: 600; }
+  .text-body { font-size: 14px; line-height: 21px; }
+  .text-body-sm { font-size: 12px; line-height: 18px; }
+  .text-label { font-size: 11px; line-height: 15px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .text-metric { font-size: 28px; line-height: 32px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .text-metric-sm { font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  .hairline { border-color: var(--color-ink-200); }
+
+  /* Data tables: sticky header, zebra rows, no vertical rules */
+  .table-scroll {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .scroll-shadow {
+    background-image: linear-gradient(to right, var(--color-paper) 30%, rgba(255, 255, 255, 0)),
+      linear-gradient(to right, rgba(255, 255, 255, 0), var(--color-paper) 70%),
+      radial-gradient(farthest-side at 0 50%, rgba(14, 26, 32, 0.14), rgba(0, 0, 0, 0)),
+      radial-gradient(farthest-side at 100% 50%, rgba(14, 26, 32, 0.14), rgba(0, 0, 0, 0));
+    background-repeat: no-repeat;
+    background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+    background-position: 0 0, 100% 0, 0 0, 100% 0;
+    background-attachment: local, local, scroll, scroll;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
