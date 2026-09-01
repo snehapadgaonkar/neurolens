@@ -219,7 +219,7 @@ def test_limitations_record_the_missing_imaging_modality(smoke_run):
     assert report["skipped_comparisons"], "the skipped MRI-only comparison must be recorded"
 
 
-def test_repeated_seeds_change_results_and_are_recorded(dlbs_dir):
+def test_repeated_seeds_change_results_and_are_recorded(dlbs_dir, tmp_path):
     from neurolens.pipeline import NeuroLensPipeline
 
     first = NeuroLensConfig()
@@ -229,7 +229,10 @@ def test_repeated_seeds_change_results_and_are_recorded(dlbs_dir):
     first.model.mitigations = ["none"]
     first.fairness.n_bootstrap = 50
     first.report.include_figures = False
-    first.report.output_dir = os.path.join(first.report.output_dir, "seedcheck")
+    # Write to a temp dir, not the repo's `runs/`. output_dir defaults to
+    # "runs", so this test used to leave real run directories behind in the
+    # working tree on every pytest invocation.
+    first.report.output_dir = str(tmp_path / "seedcheck")
 
     import copy
 
