@@ -141,6 +141,8 @@ export default function FairnessPage() {
           <label className="flex items-center gap-2">
             <span className="text-label text-ink-500">Axis</span>
             <select
+              data-testid="fairness-axis"
+              aria-label="Fairness axis"
               value={axis}
               onChange={(event) => setAxis(event.target.value)}
               className="rounded-[6px] border border-ink-300 bg-paper px-2 py-1.5 text-body-sm text-ink-900 hover:border-ink-400"

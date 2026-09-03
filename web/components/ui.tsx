@@ -301,15 +301,19 @@ export function Callout({
   title,
   children,
   className = "",
+  ...rest
 }: {
   tone?: Tone;
   title?: ReactNode;
   children: ReactNode;
   className?: string;
-}) {
+} & React.HTMLAttributes<HTMLDivElement>) {
   const resolved = TONES[tone];
   return (
-    <div className={`flex gap-3 rounded-[6px] border px-4 py-3 ${resolved.className} ${className}`}>
+    <div
+      className={`flex gap-3 rounded-[6px] border px-4 py-3 ${resolved.className} ${className}`}
+      {...rest}
+    >
       <StatusGlyph tone={tone} className="mt-0.5 h-4 w-4" />
       <div className="min-w-0 text-body">
         {title && <p className="font-semibold">{title}</p>}

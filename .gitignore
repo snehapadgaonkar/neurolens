@@ -48,3 +48,8 @@ web/scripts/render-check/_shell-entry.tsx
 web/scripts/render-check/nav-shim.js
 web/scripts/render-check/link-shim.js
 
+
+# Playwright
+/web/playwright-report/
+/web/test-results/
+/web/.playwright/

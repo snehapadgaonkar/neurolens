@@ -102,6 +102,7 @@ function RunSwitcher() {
     <label className="flex items-center gap-2">
       <span className="text-label text-ink-500">Run</span>
       <select
+        data-testid="run-switcher"
         value={runId ?? options[0]?.run_id ?? ""}
         onChange={(event) => setRunId(event.target.value)}
         className="max-w-[16rem] rounded-[6px] border border-ink-300 bg-paper px-2 py-1.5 text-body-sm text-ink-900 hover:border-ink-400"
@@ -139,6 +140,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-paper-50">
       <a
         href="#main"
+        data-testid="skip-link"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-[6px] focus:bg-primary-700 focus:px-4 focus:py-2 focus:text-paper"
       >
         Skip to content
@@ -156,6 +158,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => setOpen(false)}
+            data-testid="nav-close"
             className="rounded-[6px] p-1.5 text-ink-300 hover:bg-ink-800 hover:text-paper xl:hidden"
             aria-label="Close navigation"
           >
@@ -189,6 +192,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <button
           type="button"
           aria-label="Close navigation overlay"
+          data-testid="nav-overlay"
           onClick={() => setOpen(false)}
           className="fixed inset-0 z-30 bg-ink-950/45 xl:hidden"
         />
@@ -201,6 +205,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setOpen(true)}
+              data-testid="nav-open"
               className="rounded-[6px] border border-ink-300 p-1.5 text-ink-700 hover:bg-paper-50 xl:hidden"
               aria-label="Open navigation"
               aria-expanded={open}
@@ -249,7 +254,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </header>
 
         {/* Persistent research-use notice — never dismissible */}
-        <div className="border-b border-warn-700/25 bg-warn-100">
+        <div className="border-b border-warn-700/25 bg-warn-100" data-testid="research-notice" role="note">
           <div className="mx-auto flex max-w-[1440px] items-start gap-2.5 px-4 py-2 sm:px-6">
             <StatusGlyph tone="warn" className="mt-0.5 h-4 w-4 text-warn-700" />
             <p className="text-body-sm text-warn-700">
@@ -259,15 +264,26 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <main id="main" className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8">
+        {/* tabIndex={-1} is what makes the skip link actually move focus:
+            without it the browser only moves the sequential focus start point
+            and `main` never becomes the active element. */}
+        <main
+          id="main"
+          tabIndex={-1}
+          className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 focus:outline-none"
+        >
           {error ? (
-            <div className="flex flex-col items-start gap-3 rounded-[10px] border border-risk-700/25 bg-risk-100 px-5 py-5">
+            <div
+              data-testid="load-error"
+              role="alert"
+              className="flex flex-col items-start gap-3 rounded-[10px] border border-risk-700/25 bg-risk-100 px-5 py-5"
+            >
               <p className="flex items-center gap-2 text-h3 text-risk-700">
                 <StatusGlyph tone="risk" className="h-4 w-4" />
                 The audit package could not be loaded
               </p>
               <p className="max-w-[70ch] text-body text-risk-700">{error}</p>
-              <Button variant="primary" onClick={retry}>
+              <Button variant="primary" onClick={retry} data-testid="load-error-retry">
                 Try again
               </Button>
             </div>

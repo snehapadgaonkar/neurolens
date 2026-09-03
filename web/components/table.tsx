@@ -112,6 +112,7 @@ export function DataTable<Row extends Record<string, unknown>>({
                   {column.sortable ? (
                     <button
                       type="button"
+                      data-testid={`sort-header-${column.key}`}
                       onClick={() => toggle(column.key)}
                       className="inline-flex items-center gap-1 hover:text-ink-950"
                     >

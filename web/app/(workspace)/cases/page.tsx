@@ -143,6 +143,8 @@ export default function CasesPage() {
             <span className="text-label text-ink-500">Search patient identifier</span>
             <input
               type="search"
+              data-testid="case-search"
+              aria-label="Search patient identifier"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="e.g. sub-1139"
@@ -150,7 +152,12 @@ export default function CasesPage() {
             />
           </label>
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <Button active={flaggedOnly} onClick={() => setFlaggedOnly((value) => !value)}>
+            <Button
+              active={flaggedOnly}
+              data-testid="flagged-toggle"
+              aria-pressed={flaggedOnly}
+              onClick={() => setFlaggedOnly((value) => !value)}
+            >
               {flaggedOnly ? "Showing flagged only" : "Flagged OOD only"}
             </Button>
             <span className="text-label text-ink-500">Sort by</span>
@@ -161,12 +168,18 @@ export default function CasesPage() {
                 ["patient_id", "Patient"],
               ] as [SortKey, string][]
             ).map(([key, label]) => (
-              <Button key={key} active={sort === key} onClick={() => setSort(key)}>
+              <Button
+                key={key}
+                active={sort === key}
+                data-testid={`sort-${key}`}
+                aria-pressed={sort === key}
+                onClick={() => setSort(key)}
+              >
                 {label}
               </Button>
             ))}
           </div>
-          <p className="mt-3 text-body-sm text-ink-600">
+          <p className="mt-3 text-body-sm text-ink-600" data-testid="case-count">
             {loading
               ? "Loading cases…"
               : `${fmtInt(cases?.length ?? 0)} shown of ${fmtInt(total)} held-out cases · ${fmtInt(flagged)} flagged OOD`}
@@ -227,7 +240,7 @@ export default function CasesPage() {
 
       {error && (
         <div className="mt-4">
-          <Callout tone="risk" title="Cases could not be loaded">
+          <Callout tone="risk" title="Cases could not be loaded" data-testid="cases-error">
             {error}
           </Callout>
         </div>

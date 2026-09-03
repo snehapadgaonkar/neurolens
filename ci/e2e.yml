@@ -1,0 +1,72 @@
+name: e2e
+
+on:
+  push:
+    branches: [main, "arena/**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # The API serves the run artifacts, so it must be installed for the suite.
+      - name: Install neurolens
+        run: pip install -e ".[api,dev]"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      # Browsers are cached by Playwright's own action; the suite needs chromium
+      # plus the mobile viewport project.
+      - name: Install Playwright browsers
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+
+      # Fetches the real CC0 OpenNeuro metadata. The suite refuses to run
+      # against generated data, so this step failing is a hard failure.
+      - name: Fetch real dataset metadata
+        run: neurolens fetch-data --dataset openneuro-ds004856
+
+      - name: Run end-to-end tests
+        working-directory: web
+        env:
+          CI: true
+          NEUROLENS_BIN: neurolens
+        run: npm run test:e2e:ci
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload traces and screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: web/test-results/
+          retention-days: 14
+          if-no-files-found: ignore
