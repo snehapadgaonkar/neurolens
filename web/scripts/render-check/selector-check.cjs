@@ -113,11 +113,13 @@ import { StoreProvider } from "@/lib/store";
 import { Shell } from "@/components/shell";
 import Cases from "@/app/(workspace)/cases/page";
 import Fairness from "@/app/(workspace)/fairness/page";
+import Release from "@/app/(workspace)/release/page";
 import CaseDetail from "@/app/(workspace)/cases/[patientId]/page";
 
 const COMPONENTS: Record<string, () => any> = {
   cases: Cases,
   fairness: Fairness,
+  release: Release,
   caseDetail: CaseDetail,
 };
 
@@ -391,12 +393,76 @@ const expectUniqueText = (host, scenario, needle, expected = 1) => {
     unmount();
   }
 
+  // ---- scenario 6b: release page, healthy -----------------------------
+  // The suite locates the artifact buttons by accessible name and does not use
+  // .first(), so a second element sharing that name would throw in strict mode.
+  {
+    const { host, unmount } = await mount("release");
+    const S = "release (healthy)";
+    for (const label of ["Model card", "Full report"]) {
+      const links = [...host.querySelectorAll("a")].filter(
+        (a) => (a.textContent || "").replace(/\s+/g, " ").trim() === label,
+      );
+      record(
+        S, `getByRole("link", { name: "${label}" }) matches 1`,
+        links.length === 1,
+        `found ${links.length}`,
+      );
+      const href = links[0]?.getAttribute("href") || "";
+      record(
+        S, `"${label}" href targets /api/artifact/`,
+        href.startsWith("/api/artifact/"),
+        href || "no href",
+      );
+    }
+    // The readiness test counts these and asserts exactly one is present.
+    const ready = countTextMatches(host, "RELEASE READY");
+    const blocked = countTextMatches(host, "BLOCKED");
+    record(
+      S, "exactly one readiness verdict renders",
+      ready + blocked === 1,
+      `RELEASE READY=${ready}, BLOCKED=${blocked}`,
+    );
+    unmount();
+  }
+
+  // ---- scenario 6c: case detail, patient that exists ------------------
+  {
+    const allCases = (await (await nodeFetch(ORIGIN + "/api/cases?limit=200")).json()).cases;
+    let withExplanation = "";
+    for (const candidate of allCases) {
+      const detail = await (
+        await nodeFetch(ORIGIN + "/api/case/" + encodeURIComponent(candidate.patient_id))
+      ).json();
+      if (detail.explanation) {
+        withExplanation = candidate.patient_id;
+        break;
+      }
+    }
+    record("case detail (real patient)", "found a patient with an explanation",
+      !!withExplanation, withExplanation || "none in run");
+
+    if (withExplanation) {
+      globalThis.__CASE_ID__ = withExplanation;
+      const { host, unmount } = await mount("caseDetail");
+      const S = "case detail (real patient)";
+      // Located without .first() in the suite, so it must be unique.
+      expectUniqueText(host, S, "Why the model predicted this");
+      const patientId = withExplanation;
+      expectText(host, S, "patient id is rendered in the page", patientId);
+      unmount();
+      globalThis.__CASE_ID__ = "";
+    }
+  }
+
   // ---- scenario 7: case detail, unknown patient -----------------------
   {
     globalThis.__CASE_ID__ = "sub-0000000";
     const { host, unmount } = await mount("caseDetail");
     const S = "case detail (unknown id)";
     expectText(host, S, "not-found state renders", "Case not found");
+    // The suite locates this without .first(), so it must be unique.
+    expectUniqueText(host, S, "Case not found");
     const back = [...host.querySelectorAll("a")].find((a) =>
       (a.textContent || "").includes("Back to cases"),
     );
