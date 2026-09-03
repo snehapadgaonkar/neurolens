@@ -74,10 +74,19 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     /* The DESIGN.md breakpoint rules are a product requirement, so mobile is a
-       first-class project rather than an afterthought. */
+       first-class project rather than an afterthought.
+
+       It is scoped to the narrow-viewport spec on purpose. Below the `sm`
+       breakpoint (640px) the workspace renders a *different structure*, not a
+       narrower one: the evidence `<table>` is `display:none` and a card list
+       takes its place. `getByRole("table")` matches nothing there, since an
+       unrendered element is absent from the accessibility tree, and
+       `innerText()` on it returns empty — so every table assertion would fail
+       at 412px for a reason that has nothing to do with a regression. */
     {
       name: "mobile",
       use: { ...devices["Pixel 7"] },
+      testMatch: /responsive\.spec\.ts/,
     },
   ],
 
