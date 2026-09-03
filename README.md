@@ -224,6 +224,26 @@ From `web/`, once the API is running:
 | `npm run subgroup-check` | assert subgroup labels on a case that has subgroup context |
 | `npm run check:static` | walk all 13 built-in static SPA screens against a live API |
 
+### End-to-end tests (Playwright)
+
+One-time setup: `npx playwright install --with-deps chromium` from `web/`.
+
+| Command | Purpose |
+|---|---|
+| `npm run test:e2e` | run the full browser suite; starts the API and Next.js itself |
+| `npm run test:e2e:ui` | interactive watch mode for writing and debugging tests |
+| `npm run test:e2e:ci` | CI invocation: 2 retries, GitHub + HTML + list reporters |
+| `npm run test:e2e:report` | open the HTML report from the last run |
+
+The suite seeds a real run from the real OpenNeuro ds004856 metadata before it
+starts and removes only the run it created afterwards. It refuses to run
+against generated data.
+
+The GitHub Actions workflow ships at `ci/e2e.yml`, **not**
+`.github/workflows/e2e.yml`, because the push token is a GitHub App
+installation without the `workflows` permission. `ci/README.md` explains the
+one-line move that enables it.
+
 ---
 
 ## License
