@@ -178,6 +178,35 @@ const expectText = (host, scenario, label, needle) => {
   record(scenario, label, text.includes(needle), text.includes(needle) ? "" : `missing "${needle}"`);
 };
 
+/**
+ * Count the elements Playwright's text engine would return for a locator.
+ *
+ * Playwright matches the *smallest* element containing the text, and a bare
+ * getByText() runs in strict mode, so two sibling matches throw instead of
+ * picking one. Counting every ancestor too would over-report, so an element
+ * only counts when none of its children also match.
+ */
+const countTextMatches = (host, needle) => {
+  const norm = (value) => (value || "").replace(/\s+/g, " ").trim();
+  const target = norm(needle);
+  const all = [...host.querySelectorAll("*")];
+  return all.filter((element) => {
+    if (norm(element.textContent) !== target) return false;
+    return ![...element.children].some((child) => norm(child.textContent) === target);
+  }).length;
+};
+
+/** Assert a getByText() locator would resolve to exactly one element. */
+const expectUniqueText = (host, scenario, needle, expected = 1) => {
+  const found = countTextMatches(host, needle);
+  record(
+    scenario,
+    `getByText("${needle}") matches ${expected}`,
+    found === expected,
+    `found ${found} — strict mode ${found === 1 ? "ok" : "would throw"}`,
+  );
+};
+
 (async () => {
   await esbuild.build({
     entryPoints: [entrySrc],
@@ -313,6 +342,30 @@ const expectText = (host, scenario, label, needle) => {
     const S = "cases (query 500)";
     expectTestId(host, S, "cases-error");
     expectText(host, S, "callout title renders", "Cases could not be loaded");
+    unmount();
+  }
+
+  // ---- scenario 5b: cases page, empty result set ----------------------
+  // The suite asserts on the "no cases match" copy, and the component renders
+  // that string in two places (the chart panel's fallback and the table's
+  // emptyLabel). A bare getByText() is strict, so duplicates would throw.
+  {
+    globalThis.__FETCH_POLICY__ = (url) =>
+      url.includes("/api/cases") ? { status: 200, body: { cases: [], total: 0 } } : null;
+    const { host, unmount } = await mount("cases");
+    const S = "cases (empty result set)";
+    // The copy itself is rendered twice (chart panel fallback + table
+    // emptyLabel), which is exactly why the suite targets the table's own hook
+    // instead of using a strict getByText().
+    expectUniqueText(host, S, "No cases match the current filter.", 2);
+    expectCount(host, S, "table-empty hook resolves once", '[data-testid="table-empty"]', 1);
+    const empty = host.querySelector('[data-testid="table-empty"]');
+    record(
+      S, "table-empty carries the emptyLabel copy",
+      (empty?.textContent || "").trim() === "No cases match the current filter.",
+      JSON.stringify((empty?.textContent || "").trim()),
+    );
+    expectText(host, S, "count line still renders", "0 shown of 0");
     unmount();
   }
 

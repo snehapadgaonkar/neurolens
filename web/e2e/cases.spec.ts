@@ -39,7 +39,13 @@ test.describe("Case explorer", () => {
     await page.getByTestId("case-search").fill("sub-does-not-exist");
 
     await expect(page.getByTestId("case-count")).toContainText("0 shown of 0");
-    await expect(page.getByText("No cases match the current filter.")).toBeVisible();
+
+    // Targeted by hook, not by text: this copy is rendered twice on an empty
+    // result set (the chart panel's fallback and the table's emptyLabel), and a
+    // bare getByText() is strict, so it would throw on the ambiguity.
+    const empty = page.getByTestId("table-empty");
+    await expect(empty).toBeVisible();
+    await expect(empty).toHaveText("No cases match the current filter.");
   });
 
   test("the flagged-OOD toggle restricts the list to out-of-distribution patients", async ({

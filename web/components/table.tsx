@@ -82,7 +82,12 @@ export function DataTable<Row extends Record<string, unknown>>({
 
   if (!rows.length) {
     return (
-      <p className="px-4 py-6 text-body-sm text-ink-600 sm:px-5">{emptyLabel}</p>
+      // Test hook: the same empty-state copy is often rendered elsewhere on the
+      // screen (e.g. a chart panel's fallback), and Playwright's getByText() is
+      // strict, so callers need a way to target the table's own copy.
+      <p data-testid="table-empty" className="px-4 py-6 text-body-sm text-ink-600 sm:px-5">
+        {emptyLabel}
+      </p>
     );
   }
 
