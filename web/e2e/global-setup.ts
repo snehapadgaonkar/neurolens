@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -83,14 +83,11 @@ export default async function globalSetup(): Promise<void> {
   const created = !before.has(runId);
   writeFileSync(MARKER, JSON.stringify({ runId, runDir, created }));
 
-  process.env.E2E_RUN_ID = runId;
+  // Deliberately no process.env handoff to the tests: Playwright runs global
+  // setup in a separate process from the workers, so assignments here would not
+  // reach them. Tests read the run they are served from the API instead, which
+  // keeps a single source of truth and survives a re-seeded run.
   console.log(
     `[e2e] seeded run ${runId} (created by this suite: ${created})`,
   );
-
-  // Surface the run id to the tests without a second source of truth.
-  const snapshot = JSON.parse(
-    readFileSync(path.join(runDir, "audit_report.json"), "utf-8"),
-  );
-  process.env.E2E_RUN_COHORT_N = String(snapshot.cohort?.analysed ?? "");
 }
