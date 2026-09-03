@@ -4,30 +4,44 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 /**
- * Seed a real run for the E2E suite.
+ * Seed real runs for the E2E suite.
  *
- * Two constraints shape this:
+ * Three constraints shape this:
  *
  * 1. The project's standing rule is real data only — no synthetic cohort is
  *    generated anywhere, including tests. So seeding means running the real
  *    pipeline against the real OpenNeuro ds004856 metadata, exactly as
  *    `neurolens run` does for a human.
  *
- * 2. The server is read-only, so a test can never corrupt a run. Cleanup is
- *    therefore about not leaving our own run behind in the developer's `runs/`
+ * 2. Two runs are seeded, not one. The run switcher is an approved journey, and
+ *    with a single run its "switch and reload" assertion can only ever skip —
+ *    a test that never runs is not coverage. Both runs come from the same real
+ *    dataset under different seeds, so nothing synthetic is introduced.
+ *
+ * 3. The server is read-only, so a test can never corrupt a run. Cleanup is
+ *    therefore about not leaving our own runs behind in the developer's `runs/`
  *    directory, not about restoring state.
  *
  * What we create is recorded in a marker file so teardown (a separate file,
  * because Playwright only calls a `globalTeardown` *config path*, never a
- * named export from this module) can only ever delete the directory this setup
- * produced. A run the developer already had is never touched.
+ * named export from this module) can only ever delete the directories this
+ * setup produced. Runs the developer already had are never touched.
  */
 
 export const MARKER = path.join(tmpdir(), "neurolens-e2e-seed.json");
 
+export interface SeededRun {
+  runId: string;
+  runDir: string;
+  created: boolean;
+}
+
 const REPO = path.resolve(__dirname, "..", "..");
 const RUNS = path.join(REPO, "runs");
 const DATA = path.join(REPO, "data", "raw", "ds004856");
+
+/** Distinct seeds over the same real dataset: two genuinely different runs. */
+const SEEDS = [20240917, 20240918];
 
 const NEUROLENS_BIN =
   process.env.NEUROLENS_BIN ??
@@ -54,40 +68,57 @@ function ensureData(): void {
   }
 }
 
+/** Parse the `directory  : runs/<id>` line the CLI prints on success. */
+function runDirFrom(output: string): string {
+  const match = /^directory\s*:\s*(\S+)$/m.exec(output);
+  if (!match) {
+    throw new Error(`Could not determine the run directory from:\n${output}`);
+  }
+  return path.resolve(REPO, match[1]);
+}
+
 export default async function globalSetup(): Promise<void> {
   ensureData();
 
   const before = new Set(existsSync(RUNS) ? readdirSync(RUNS) : []);
+  const seeded: SeededRun[] = [];
 
-  const output = neurolens([
-    "run",
-    "--dataset",
-    "openneuro-ds004856",
-    "--data-dir",
-    DATA,
-    "--seed",
-    "20240917",
-  ]);
+  for (const seed of SEEDS) {
+    const output = neurolens([
+      "run",
+      "--dataset",
+      "openneuro-ds004856",
+      "--data-dir",
+      DATA,
+      "--seed",
+      String(seed),
+    ]);
 
-  const match = /^directory\s*:\s*(\S+)$/m.exec(output);
-  if (!match) {
-    throw new Error(
-      `Could not determine the seeded run directory from:\n${output}`,
+    const runDir = runDirFrom(output);
+    const runId = path.basename(runDir);
+
+    // Run ids are stamped to the second. Two back-to-back runs cannot collide
+    // in practice (each takes ~10s), but if they ever did, the switcher would
+    // silently have one option and the journey would start skipping again.
+    if (seeded.some((run) => run.runId === runId)) {
+      throw new Error(
+        `Seeding produced a duplicate run id ${runId}; the run switcher would ` +
+          "have nothing to switch between.",
+      );
+    }
+
+    seeded.push({ runId, runDir, created: !before.has(runId) });
+    console.log(
+      `[e2e] seeded run ${runId} (seed ${seed}, created by this suite: ${!before.has(runId)})`,
     );
   }
 
-  const runDir = path.resolve(REPO, match[1]);
-  const runId = path.basename(runDir);
-
-  // Only claim ownership of it if it did not already exist.
-  const created = !before.has(runId);
-  writeFileSync(MARKER, JSON.stringify({ runId, runDir, created }));
+  // Written last, so a partial seed never leaves teardown holding a marker for
+  // a directory that does not exist.
+  writeFileSync(MARKER, JSON.stringify({ runs: seeded }));
 
   // Deliberately no process.env handoff to the tests: Playwright runs global
   // setup in a separate process from the workers, so assignments here would not
   // reach them. Tests read the run they are served from the API instead, which
   // keeps a single source of truth and survives a re-seeded run.
-  console.log(
-    `[e2e] seeded run ${runId} (created by this suite: ${created})`,
-  );
 }

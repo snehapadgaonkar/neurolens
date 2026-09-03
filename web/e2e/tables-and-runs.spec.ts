@@ -104,16 +104,19 @@ test.describe("Run switcher", () => {
     const switcher = page.getByTestId("run-switcher");
     const options = await switcher.locator("option").count();
 
-    test.skip(
-      options < 2,
-      "only one run is present; switching cannot be exercised without seeding a second one",
-    );
+    // A hard assertion, not a skip. Global setup seeds two runs precisely so
+    // this journey can execute; if that ever regresses to one, a skip would
+    // keep reporting green while testing nothing.
+    expect(
+      options,
+      "global setup must seed two runs so switching is exercisable",
+    ).toBeGreaterThanOrEqual(2);
 
     const other = await switcher
       .locator("option")
       .nth(1)
       .getAttribute("value");
-    expect(other).not.toBe(info.runId);
+    expect(other, "the second option must name a different run").not.toBe(info.runId);
 
     await switcher.selectOption(other!);
 
@@ -121,5 +124,14 @@ test.describe("Run switcher", () => {
     await expect(switcher).toHaveValue(other!);
     await expect(page.getByTestId("load-error")).toHaveCount(0);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+    // The served evidence must actually be the chosen run's, not the previous
+    // one re-rendered — which is the failure this control exists to prevent.
+    const response = await page.request.get(
+      `/api/report?run=${encodeURIComponent(other!)}`,
+    );
+    expect(response.ok()).toBeTruthy();
+    const report = await response.json();
+    expect(report.manifest.run_id).toBe(other);
   });
 });
