@@ -47,6 +47,8 @@ web/scripts/render-check/_shell.cjs
 web/scripts/render-check/_shell-entry.tsx
 web/scripts/render-check/nav-shim.js
 web/scripts/render-check/link-shim.js
+web/scripts/render-check/_selector.cjs
+web/scripts/render-check/_selector-entry.tsx
 
 
 # Playwright

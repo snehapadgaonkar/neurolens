@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:ci": "playwright test --retries=2 --reporter=github,html,list",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "check:selectors": "node scripts/render-check/selector-check.cjs"
   },
   "dependencies": {
     "next": "16.3.4",

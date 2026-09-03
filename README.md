@@ -223,6 +223,7 @@ From `web/`, once the API is running:
 | `npm run check:shell` | assert the shell chrome renders (banner, run switcher, nav) |
 | `npm run subgroup-check` | assert subgroup labels on a case that has subgroup context |
 | `npm run check:static` | walk all 13 built-in static SPA screens against a live API |
+| `npm run check:selectors` | render the real components and assert every hook the e2e suite uses resolves |
 
 ### End-to-end tests (Playwright)
 
