@@ -390,10 +390,22 @@ const expectUniqueText = (host, scenario, needle, expected = 1) => {
       (select?.querySelector("option")?.value || "") === "all",
       select?.querySelector("option")?.value || "none",
     );
+    // The suite reads headers off getByRole("table").last() and greps them for
+    // the required columns, so both the table count and the header text matter.
+    const tables = host.querySelectorAll("table");
+    record(
+      S, "exactly one evidence table renders (so .last() is unambiguous)",
+      tables.length === 1,
+      `found ${tables.length}`,
+    );
+    const headers = [...(tables[tables.length - 1]?.querySelectorAll("thead th") ?? [])]
+      .map((th) => (th.textContent || "").toLowerCase())
+      .join(" | ");
+    record(S, "headers expose the columns the test greps for",
+      ["subgroup", "n", "ci", "gap"].every((needle) => headers.includes(needle)),
+      headers || "no headers");
     unmount();
   }
-
-  // ---- scenario 6b: release page, healthy -----------------------------
   // The suite locates the artifact buttons by accessible name and does not use
   // .first(), so a second element sharing that name would throw in strict mode.
   {
