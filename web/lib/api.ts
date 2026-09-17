@@ -75,10 +75,18 @@ export interface CaseQuery {
   order?: "asc" | "desc";
   limit?: number;
   offset?: number;
+  /**
+   * Which run to read cases from. The API accepts this and defaults to the
+   * active run, but the workspace lets a reviewer switch runs explicitly — and
+   * if the case table ignored that switch it would silently show predictions
+   * from a different model than the report on screen beside it.
+   */
+  runId?: string;
 }
 
 export const fetchCases = (query: CaseQuery = {}) => {
   const params = new URLSearchParams();
+  if (query.runId) params.set("run", query.runId);
   if (query.search) params.set("search", query.search);
   if (query.flaggedOnly) params.set("flagged_only", "true");
   if (query.sort) params.set("sort", query.sort);
@@ -88,8 +96,12 @@ export const fetchCases = (query: CaseQuery = {}) => {
   return get<CasesResponse>(`/api/cases?${params.toString()}`);
 };
 
-export const fetchCase = (patientId: string) =>
-  get<CaseDetail>(`/api/case/${encodeURIComponent(patientId)}`);
+export const fetchCase = (patientId: string, runId?: string) =>
+  get<CaseDetail>(
+    `/api/case/${encodeURIComponent(patientId)}${
+      runId ? `?run=${encodeURIComponent(runId)}` : ""
+    }`,
+  );
 
 export const artifactUrl = (name: string, runId?: string) =>
   `/api/artifact/${name.split("/").map(encodeURIComponent).join("/")}${

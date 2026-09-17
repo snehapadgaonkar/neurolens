@@ -87,16 +87,6 @@ def _default_data_dir(dataset: str) -> str:
     return os.path.join("data", "raw", suffix)
 
 
-def _newest_run(root: str) -> Optional[str]:
-    if not os.path.isdir(root):
-        return None
-    candidates = [
-        os.path.join(root, name) for name in sorted(os.listdir(root), reverse=True)
-        if os.path.exists(os.path.join(root, name, "audit_report.json"))
-    ]
-    return candidates[0] if candidates else None
-
-
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -169,8 +159,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.command == "serve":
         from neurolens.server.app import serve
 
-        run_dir = args.run_dir or _newest_run(args.runs_root)
-        return serve(run_dir=run_dir, runs_root=args.runs_root,
+        # Pass --run-dir through only when the user actually gave one. Resolving
+        # "newest" here would freeze it at startup, so a run generated while the
+        # server is up would never become active -- /api/runs would list it as
+        # newest while /api/health and every unscoped request still served the
+        # older one. Left as None, the server resolves newest per request.
+        return serve(run_dir=args.run_dir, runs_root=args.runs_root,
                      host=args.host, port=args.port)
 
     if args.command == "smoke-test":

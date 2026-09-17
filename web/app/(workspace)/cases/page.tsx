@@ -34,7 +34,7 @@ const API_SORT: Record<ColumnSortKey, CaseSortKey> = {
 };
 
 export default function CasesPage() {
-  const { report } = useStore();
+  const { report, runId } = useStore();
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [flaggedOnly, setFlaggedOnly] = useState(false);
@@ -56,6 +56,7 @@ export default function CasesPage() {
     let cancelled = false;
     setLoading(true);
     fetchCases({
+      runId,
       search: query || undefined,
       flaggedOnly,
       sort: API_SORT[sort.key],
@@ -77,7 +78,7 @@ export default function CasesPage() {
     return () => {
       cancelled = true;
     };
-  }, [query, flaggedOnly, sort]);
+  }, [query, flaggedOnly, sort, runId]);
 
   const flagged = useMemo(
     () => (cases ?? []).filter((item) => item.ood_score >= item.ood_threshold).length,

@@ -305,3 +305,49 @@ def test_health_reports_the_run_actually_served(smoke_run, tmp_path):
               for r in app_client.get("/api/runs").json()["runs"]}
     assert listed == {pinned.name, newer.name}
     assert health["active_run"] != newer.name
+
+
+def test_active_run_follows_the_newest_run_without_a_restart(tmp_path):
+    """A run created after the server starts must become active.
+
+    The CLI used to resolve "newest" once at startup and pin it, so a run
+    generated while the server was up never became active: /api/runs listed it
+    newest-first while /api/health and every unscoped request still served the
+    older one. The workspace would then show a report and a case table from two
+    different models.
+    """
+    runs_root = tmp_path / "runs"
+    runs_root.mkdir()
+
+    def make_run(run_id: str) -> None:
+        d = runs_root / run_id
+        d.mkdir()
+        (d / "audit_report.json").write_text(
+            json.dumps({"manifest": {"run_id": run_id}, "tasks": {}, "cohort": {}})
+        )
+
+    make_run("20260101T000000Z-test")
+    app = create_app(runs_root=str(runs_root))
+    client = TestClient(app)
+    assert client.get("/api/health").json()["active_run"] == "20260101T000000Z-test"
+
+    # A newer run appears while the same app object is still serving.
+    make_run("20260202T000000Z-test")
+    assert client.get("/api/health").json()["active_run"] == "20260202T000000Z-test"
+    assert client.get("/api/runs").json()["runs"][0]["run_id"] == "20260202T000000Z-test"
+
+
+def test_explicit_run_dir_still_pins_the_active_run(tmp_path):
+    """--run-dir is a deliberate choice and must not be overridden by "newest"."""
+    runs_root = tmp_path / "runs"
+    runs_root.mkdir()
+    for run_id in ("20260101T000000Z-test", "20260202T000000Z-test"):
+        d = runs_root / run_id
+        d.mkdir()
+        (d / "audit_report.json").write_text(
+            json.dumps({"manifest": {"run_id": run_id}, "tasks": {}, "cohort": {}})
+        )
+
+    pinned = str(runs_root / "20260101T000000Z-test")
+    client = TestClient(create_app(run_dir=pinned, runs_root=str(runs_root)))
+    assert client.get("/api/health").json()["active_run"] == "20260101T000000Z-test"

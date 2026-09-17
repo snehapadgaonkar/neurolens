@@ -24,7 +24,7 @@ import type { CaseDetail } from "@/lib/types";
 export default function CasePage() {
   const params = useParams<{ patientId: string }>();
   const patientId = decodeURIComponent(params.patientId ?? "");
-  const { report } = useStore();
+  const { report, runId } = useStore();
   const [detail, setDetail] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export default function CasePage() {
     if (!patientId) return;
     let cancelled = false;
     setLoading(true);
-    fetchCase(patientId)
+    fetchCase(patientId, runId)
       .then((response) => {
         if (cancelled) return;
         setDetail(response);
@@ -48,7 +48,7 @@ export default function CasePage() {
     return () => {
       cancelled = true;
     };
-  }, [patientId]);
+  }, [patientId, runId]);
 
   if (loading) {
     return (
