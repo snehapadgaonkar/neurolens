@@ -91,7 +91,9 @@
   --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular",
     Menlo, Consolas, monospace;
 
-  /* Elevation */
+  /* Elevation. Default to shadow-0: depth should come from border and
+     background contrast, not shadow. Shadow is for things that float. */
+  --shadow-0: none;
   --shadow-1: 0 1px 2px rgba(14, 26, 32, 0.05), 0 1px 3px rgba(14, 26, 32, 0.07);
   --shadow-2: 0 2px 4px rgba(14, 26, 32, 0.04), 0 12px 28px rgba(14, 26, 32, 0.1);
   --shadow-3: 0 8px 20px rgba(14, 26, 32, 0.14), 0 24px 60px rgba(14, 26, 32, 0.16);
@@ -103,6 +105,16 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  /* Chips and filter pills only. Pill-shaped data containers read as
+     decoration and undermine seriousness. */
+  --radius-pill: 999px;
+
+  /* Motion. Purposeful feedback only -- see the hard rule below. */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @layer base {
@@ -118,6 +130,8 @@
     --space-10: 40px;
     --space-12: 48px;
     --space-16: 64px;
+    --space-20: 80px;
+    --space-24: 96px;
   }
 
   html {
@@ -128,7 +142,7 @@
     background: var(--color-paper-50);
     color: var(--color-ink-700);
     font-family: var(--font-sans);
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.5;
     font-feature-settings: "cv05" 1, "ss01" 1;
     -webkit-font-smoothing: antialiased;
@@ -155,15 +169,18 @@
 
 @layer utilities {
   /* Type scale from DESIGN.md */
-  .text-display { font-size: 32px; line-height: 38px; font-weight: 600; letter-spacing: -0.02em; }
-  .text-h1 { font-size: 24px; line-height: 30px; font-weight: 600; letter-spacing: -0.017em; }
-  .text-h2 { font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -0.014em; }
-  .text-h3 { font-size: 16px; line-height: 22px; font-weight: 600; }
-  .text-body { font-size: 14px; line-height: 21px; }
-  .text-body-sm { font-size: 12px; line-height: 18px; }
-  .text-label { font-size: 11px; line-height: 15px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-  .text-metric { font-size: 28px; line-height: 32px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-  .text-metric-sm { font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+  /* Type scale (DESIGN.md v2). Class names are unchanged from v1 so no
+     component code had to move -- only the values did. Larger display sizes
+     and 15px body are what separate a contemporary product from a report. */
+  .text-display { font-size: 48px; line-height: 52px; font-weight: 600; letter-spacing: -0.02em; }
+  .text-h1, .text-title { font-size: 32px; line-height: 38px; font-weight: 600; letter-spacing: -0.015em; }
+  .text-h2 { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em; }
+  .text-h3 { font-size: 17px; line-height: 24px; font-weight: 600; }
+  .text-body { font-size: 15px; line-height: 24px; }
+  .text-body-sm { font-size: 13px; line-height: 20px; }
+  .text-label { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.01em; text-transform: uppercase; }
+  .text-metric { font-size: 36px; line-height: 40px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .text-metric-sm { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
   .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
   .tnum { font-variant-numeric: tabular-nums; }
 

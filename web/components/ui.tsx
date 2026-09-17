@@ -398,15 +398,20 @@ export function Button({
   target?: string;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const base =
-    "inline-flex items-center justify-center gap-1.5 rounded-[6px] px-3 py-1.5 text-body-sm font-medium transition-colors disabled:opacity-50";
+    "inline-flex items-center justify-center gap-1.5 rounded-[6px] px-3 py-1.5 text-body-sm font-medium transition-colors duration-[var(--duration-fast)] disabled:opacity-50";
   const skin =
     variant === "primary"
-      ? "bg-primary-700 text-paper hover:bg-primary-800"
+      ? // Near-black, not teal. Teal-on-white primary buttons are the most
+        // reliable visual shorthand for "medical software," and when the
+        // primary button and the "supported within scope" status share a hue,
+        // users conflate affordance with verdict. Teal stays for links, focus
+        // and selection, where it cannot be mistaken for a result.
+        "bg-ink-950 text-paper hover:bg-ink-800"
       : active
         ? "border border-primary-700 bg-primary-50 text-primary-800"
         : variant === "ghost"
           ? "text-ink-700 hover:bg-ink-100"
-          : "border border-ink-300 bg-paper text-ink-800 hover:border-ink-400 hover:bg-paper-50";
+          : "border border-border-input bg-paper text-ink-800 hover:border-ink-500 hover:bg-paper-50";
   const className = `${base} ${skin}`;
   if (href) {
     return (

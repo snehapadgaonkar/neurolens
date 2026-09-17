@@ -12,17 +12,24 @@ import { fmt, fmtInt } from "@/lib/format";
  * table so the underlying numbers are never only pixels (DESIGN.md).
  */
 
+// Chart palette, kept in sync with the design tokens in app/globals.css.
+//
+// This is duplicated rather than read from CSS variables, which is a known
+// weakness: when the v2 token migration warmed the ink scale and moved the
+// clinical hue, these literals were left on the v1 values and the charts
+// silently disagreed with the rest of the UI. SVG attributes do accept
+// var(--color-*), so folding these into the token layer is the right follow-up.
 const INK = {
-  axis: "#b4c7ce",
-  grid: "#e9eff1",
-  text: "#4e7382",
-  textStrong: "#2a4a55",
-  primary: "#0f5f63",
-  primarySoft: "#dcf1f0",
+  axis: "#b6b9bb",
+  grid: "#e9e9e7",
+  text: "#6b7276",
+  textStrong: "#3d4347",
+  primary: "#0b5e5a",
+  primarySoft: "#dcedeb",
   risk: "#97333c",
   warn: "#8a5300",
-  info: "#2f4e8f",
-  insufficient: "#4e5a63",
+  info: "#2f6db5",
+  insufficient: "#5a6369",
   affirm: "#1f6f4a",
 };
 
@@ -584,9 +591,9 @@ export function AttributionChart({
   if (!rows.length) return <p className="text-body-sm text-ink-600">No attributions.</p>;
   const FAMILY_FILL: Record<string, string> = {
     mri: INK.info,
-    genetics: "#5a4788",
-    clinical: "#4f6220",
-    demographic: INK.textStrong,
+    genetics: "#7a5aa8",
+    clinical: "#b5643a",
+    demographic: "#3f7f7a",
   };
   const rowHeight = 26;
   const width = 560;
