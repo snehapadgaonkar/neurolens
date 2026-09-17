@@ -179,7 +179,7 @@ export default function CasesPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="e.g. sub-1139"
-              className="mono mt-1.5 w-full rounded-[6px] border border-ink-300 bg-paper px-3 py-2 text-body-sm text-ink-900 placeholder:text-ink-400 hover:border-ink-400"
+              className="mono mt-1.5 w-full rounded-[6px] border border-border-input bg-paper px-3 py-2 text-body-sm text-ink-900 placeholder:text-ink-400 hover:border-ink-500"
             />
           </label>
           <div className="mt-4 flex flex-wrap items-center gap-2">

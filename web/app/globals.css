@@ -3,45 +3,60 @@
 /* ==========================================================================
    NeuroLens evidence workspace — design tokens
    ==========================================================================
-   Every colour pairing used for text in this app was checked against WCAG 2.1:
-   body copy >= 4.5:1, focus indicators >= 3:1. Hairline borders (ink-200/300)
-   are decorative separators only and are never used as focus indicators.
+   Every contrast figure in this file was computed from WCAG 2.1 relative
+   luminance against its actual background, not estimated.
 
-   Palette intent: an evidence workspace, not a dashboard. Cool slate ink on
-   near-white paper, one confident teal for actions and emphasis, and a
-   semantic set in which no status relies on hue alone — every status also
-   carries a label and an icon, so it survives colour-blind reading and
-   greyscale printing.
+   Palette intent: an evidence workspace, not a dashboard — and not a hospital
+   information system either. Warm neutral ink on warm near-white paper, teal
+   reserved for links and focus, and a semantic set in which no status relies
+   on hue alone: every status also carries a label and an icon, so it survives
+   colour-blind reading and greyscale printing.
+
+   Two border tokens, deliberately. A single hairline cannot serve both
+   decorative dividers and control boundaries: #e5e4e0 measures 1.19:1 against
+   paper, which fails WCAG 1.4.11's 3:1 minimum for the boundary of a control a
+   user must identify. `border` is decorative only; `border-input` is mandatory
+   on inputs, selects and checkboxes.
    ========================================================================== */
 
 @theme {
-  /* Ink — cool slate with a trace of teal */
-  --color-ink-950: #0e1a20;
-  --color-ink-900: #13262e;
-  --color-ink-800: #1c3640;
-  --color-ink-700: #2a4a55; /* body text on paper — 9.51:1 */
-  --color-ink-600: #3e6472; /* secondary text — 6.42:1 */
-  --color-ink-500: #4e7382; /* muted text — 5.12:1 on paper, 4.58:1 on paper-100 */
-  --color-ink-400: #7d99a5;
-  --color-ink-300: #b4c7ce; /* hairline border only */
-  --color-ink-200: #d6e1e5; /* hairline border only */
-  --color-ink-100: #e9eff1;
-  --color-ink-50: #f4f8f9;
+  /* Ink — warm neutral. The previous scale was blue-tinted, which is the
+     single strongest visual cue that a medical interface is institutional.
+     Warming it makes the product read as human without changing any copy. */
+  --color-ink-950: #16191b; /* headings, primary text — 16.47:1 on paper-50 */
+  --color-ink-900: #1d2124;
+  --color-ink-800: #272c30;
+  --color-ink-700: #3d4347; /* body text — 9.36:1 on paper-50 */
+  --color-ink-600: #555c61; /* secondary text — 6.24:1 on paper-50 */
+  --color-ink-500: #6b7276; /* muted text — 4.56:1 on paper-50 */
+  --color-ink-400: #8a8f93; /* disabled text only, never essential content */
+  --color-ink-300: #b6b9bb;
+  --color-ink-200: #d8d9d7;
+  --color-ink-100: #e9e9e7;
+  --color-ink-50: #f2f2f0;
 
-  /* Paper */
+  /* Paper — warm, not clinical */
   --color-paper: #ffffff;
-  --color-paper-25: #fbfcfd;
-  --color-paper-50: #f6f9fa;
-  --color-paper-100: #eef3f5;
+  --color-paper-25: #fcfcfb; /* raised: sticky bars, popovers */
+  --color-paper-50: #f7f7f5; /* application canvas */
+  --color-paper-100: #eeece9;
 
-  /* Primary — deep teal */
-  --color-primary-800: #0b474a;
-  --color-primary-700: #0f5f63; /* 7.40:1 on paper; also the focus ring colour */
-  --color-primary-600: #12767b; /* 5.38:1 on paper */
-  --color-primary-500: #17919a;
-  --color-primary-200: #b8e0de;
-  --color-primary-100: #dcf1f0;
-  --color-primary-50: #f0f9f8;
+  /* Borders — see the note at the top of this file. */
+  --color-border: #e5e4e0; /* decorative dividers and card edges only */
+  --color-border-input: #918f88; /* 3.24:1 on paper, 3.02:1 on paper-50 */
+
+  /* Primary — teal, reserved for links, focus and selection.
+     Near-black ink-950 is the primary *action* colour: teal-on-white buttons
+     are the most reliable shorthand for "medical software," and when the
+     primary button and the "supported within scope" status share a hue, users
+     conflate affordance with verdict. */
+  --color-primary-800: #08464a;
+  --color-primary-700: #0b5e5a; /* 7.60:1 on paper; the focus ring colour */
+  --color-primary-600: #0e756e; /* 5.54:1 on paper */
+  --color-primary-500: #12918a;
+  --color-primary-200: #b6dcd8;
+  --color-primary-100: #dcedeb;
+  --color-primary-50: #eef8f6;
 
   /* Semantic — always paired with a label and an icon, never hue alone */
   --color-affirm-700: #1f6f4a;
@@ -55,20 +70,25 @@
   --color-info-700: #2f4e8f;
   --color-info-100: #e5eaf7;
 
-  /* Feature families */
-  --color-mri-700: #2f4e8f;
-  --color-mri-100: #e5eaf7;
-  --color-genetic-700: #5a4788;
-  --color-genetic-100: #ebe7f6;
-  --color-clinical-700: #4f6220;
-  --color-clinical-100: #edf0dd;
-  --color-demographic-700: #2a4a55;
+  /* Feature families. No categorical hue is green: the previous palette used
+     olive for clinical covariates while using green for the affirm status, so
+     a chart mark and a success verdict shared a hue family. */
+  --color-mri-700: #2f6db5; /* 5.28:1 on paper */
+  --color-mri-100: #e3ecf7;
+  --color-genetic-700: #7a5aa8; /* 5.45:1 on paper */
+  --color-genetic-100: #ece6f5;
+  --color-clinical-700: #b5643a; /* 4.33:1 on paper */
+  --color-clinical-100: #f7e8de;
+  --color-demographic-700: #3f7f7a; /* 4.64:1 on paper */
   --color-demographic-100: #e9eff1;
 
-  /* Type */
-  --font-sans: "IBM Plex Sans", "Inter", -apple-system, BlinkMacSystemFont,
+  /* Type — Geist, loaded from the `geist` package's own bundled WOFF2 files
+     (see app/layout.tsx for why not next/font/google). Tabular figures by
+     default, which is what keeps the case table and every subgroup metric
+     column aligned without per-element overrides. */
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "JetBrains Mono",
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular",
     Menlo, Consolas, monospace;
 
   /* Elevation */
@@ -76,10 +96,13 @@
   --shadow-2: 0 2px 4px rgba(14, 26, 32, 0.04), 0 12px 28px rgba(14, 26, 32, 0.1);
   --shadow-3: 0 8px 20px rgba(14, 26, 32, 0.14), 0 24px 60px rgba(14, 26, 32, 0.16);
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
+  /* Radius — 4px is the radius of enterprise software from a decade ago.
+     The pill radius stays restricted to chips and filters: pill-shaped data
+     containers read as decoration. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 @layer base {

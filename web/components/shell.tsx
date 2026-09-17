@@ -105,7 +105,7 @@ function RunSwitcher() {
         data-testid="run-switcher"
         value={runId ?? options[0]?.run_id ?? ""}
         onChange={(event) => setRunId(event.target.value)}
-        className="max-w-[16rem] rounded-[6px] border border-ink-300 bg-paper px-2 py-1.5 text-body-sm text-ink-900 hover:border-ink-400"
+        className="max-w-[16rem] rounded-[6px] border border-border-input bg-paper px-2 py-1.5 text-body-sm text-ink-900 hover:border-ink-500"
       >
         {options.map((run) => (
           <option key={run.run_id} value={run.run_id}>

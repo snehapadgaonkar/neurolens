@@ -145,7 +145,7 @@ export default function FairnessPage() {
               aria-label="Fairness axis"
               value={axis}
               onChange={(event) => setAxis(event.target.value)}
-              className="rounded-[6px] border border-ink-300 bg-paper px-2 py-1.5 text-body-sm text-ink-900 hover:border-ink-400"
+              className="rounded-[6px] border border-border-input bg-paper px-2 py-1.5 text-body-sm text-ink-900 hover:border-ink-500"
             >
               <option value="all">All axes</option>
               {fairness.axes.map((name) => (
