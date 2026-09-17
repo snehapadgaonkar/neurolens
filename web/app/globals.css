@@ -117,9 +117,96 @@
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
+/* ==========================================================================
+   Dark theme
+   ==========================================================================
+   Not a filter over the light theme. Every value below was computed from WCAG
+   relative luminance against the dark canvas AND the dark surface, because a
+   token can be used on either.
+
+   One correction to DESIGN.md v2: the brief specified border-input #5a666c at
+   "3.2:1", but that figure was measured against canvas. Inputs sit on surface,
+   where #5a666c is 2.94:1 -- below the 3:1 that WCAG 1.4.11 requires for a
+   control boundary. #626e74 passes both (3.31 surface / 3.56 canvas).
+
+   The semantic scale inverts in meaning, not just in value: ink-950 is the
+   primary *text* colour in both themes, so it becomes light here. Components
+   reference token names, never raw hex, which is what lets the whole surface
+   flip without a single component change.
+   ========================================================================== */
+
+.dark {
+  color-scheme: dark;
+
+  /* Ink — light text on dark. ink-950 remains the primary text colour. */
+  --color-ink-950: #eceff0; /* 16.15:1 canvas, 15.01:1 surface */
+  --color-ink-900: #dde2e4;
+  --color-ink-800: #c8cfd1; /* 11.83:1 canvas */
+  --color-ink-700: #b4bbbe; /* body — 9.60:1 canvas, 8.92:1 surface */
+  --color-ink-600: #a7b0b4; /* secondary — 8.46:1 canvas */
+  --color-ink-500: #98a2a8; /* muted — 7.18:1 canvas */
+  --color-ink-400: #7c868c; /* disabled only — 5.02:1 canvas */
+  --color-ink-300: #3a4449;
+  --color-ink-200: #2a3236;
+  --color-ink-100: #1f262a;
+  --color-ink-50: #1a2024;
+
+  /* Surfaces */
+  --color-paper: #161b1e; /* card / panel surface */
+  --color-paper-25: #1a2024; /* raised */
+  --color-paper-50: #0f1315; /* application canvas */
+  --color-paper-100: #1f262a;
+
+  /* Borders */
+  --color-border: #2a3236; /* decorative only */
+  --color-border-input: #626e74; /* 3.31:1 surface, 3.56:1 canvas */
+
+  /* Primary — lightened for dark surfaces */
+  --color-primary-800: #5acfc2;
+  --color-primary-700: #3fc1b4; /* 7.85:1 on surface */
+  --color-primary-600: #2fa89c;
+  --color-primary-500: #269489;
+  --color-primary-200: #1e4f4b;
+  --color-primary-100: #173d3a;
+  --color-primary-50: #122c2a;
+
+  /* Semantic — 700 carries the text, 100 is the chip tint */
+  --color-affirm-700: #67c79a; /* 6.59:1 on its tint */
+  --color-affirm-100: #1b3327;
+  --color-warn-700: #e0a44a; /* 6.60:1 on its tint */
+  --color-warn-100: #33280f;
+  --color-insufficient-700: #98a2a8; /* 5.60:1 on its tint */
+  --color-insufficient-100: #232a2e;
+  --color-risk-700: #e58a90; /* 6.05:1 on its tint */
+  --color-risk-100: #352024;
+  --color-info-700: #7fa8e8;
+  --color-info-100: #1b2536;
+
+  /* Feature families — still no green, so no collision with affirm */
+  --color-mri-700: #6fa3e8; /* 6.68:1 on surface */
+  --color-mri-100: #1b2536;
+  --color-genetic-700: #b394dc; /* 6.77:1 */
+  --color-genetic-100: #251c33;
+  --color-clinical-700: #e0956a; /* 7.17:1 */
+  --color-clinical-100: #33231a;
+  --color-demographic-700: #6fbdb6; /* 7.96:1 */
+  --color-demographic-100: #16302e;
+
+  /* Shadows are useless on a dark canvas; borders do the separating. */
+  --shadow-1: none;
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-3: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+  }
+}
+
 @layer base {
   :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;

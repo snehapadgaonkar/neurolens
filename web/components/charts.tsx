@@ -12,25 +12,31 @@ import { fmt, fmtInt } from "@/lib/format";
  * table so the underlying numbers are never only pixels (DESIGN.md).
  */
 
-// Chart palette, kept in sync with the design tokens in app/globals.css.
-//
-// This is duplicated rather than read from CSS variables, which is a known
-// weakness: when the v2 token migration warmed the ink scale and moved the
-// clinical hue, these literals were left on the v1 values and the charts
-// silently disagreed with the rest of the UI. SVG attributes do accept
-// var(--color-*), so folding these into the token layer is the right follow-up.
+/**
+ * Chart palette, read from the design tokens in app/globals.css.
+ *
+ * Each value is `var(--token, <light hex>)`. The var() is what lets charts
+ * follow the dark theme; the literal fallback is the light value, so if a
+ * renderer does not resolve custom properties in SVG presentation attributes
+ * the chart degrades to exactly the palette it had before rather than to black.
+ *
+ * This replaced a block of bare hex literals. That duplication was not
+ * harmless: when the v2 token migration warmed the ink scale and moved the
+ * clinical hue, the literals stayed on v1 values and every chart silently
+ * disagreed with the rest of the UI.
+ */
 const INK = {
-  axis: "#b6b9bb",
-  grid: "#e9e9e7",
-  text: "#6b7276",
-  textStrong: "#3d4347",
-  primary: "#0b5e5a",
-  primarySoft: "#dcedeb",
-  risk: "#97333c",
-  warn: "#8a5300",
-  info: "#2f6db5",
-  insufficient: "#5a6369",
-  affirm: "#1f6f4a",
+  axis: "var(--color-ink-300, #b6b9bb)",
+  grid: "var(--color-ink-100, #e9e9e7)",
+  text: "var(--color-ink-500, #6b7276)",
+  textStrong: "var(--color-ink-700, #3d4347)",
+  primary: "var(--color-primary-700, #0b5e5a)",
+  primarySoft: "var(--color-primary-100, #dcedeb)",
+  risk: "var(--color-risk-700, #97333c)",
+  warn: "var(--color-warn-700, #8a5300)",
+  info: "var(--color-mri-700, #2f6db5)",
+  insufficient: "var(--color-insufficient-700, #5a6369)",
+  affirm: "var(--color-affirm-700, #1f6f4a)",
 };
 
 function Figure({
@@ -591,9 +597,9 @@ export function AttributionChart({
   if (!rows.length) return <p className="text-body-sm text-ink-600">No attributions.</p>;
   const FAMILY_FILL: Record<string, string> = {
     mri: INK.info,
-    genetics: "#7a5aa8",
-    clinical: "#b5643a",
-    demographic: "#3f7f7a",
+    genetics: "var(--color-genetic-700, #7a5aa8)",
+    clinical: "var(--color-clinical-700, #b5643a)",
+    demographic: "var(--color-demographic-700, #3f7f7a)",
   };
   const rowHeight = 26;
   const width = 560;

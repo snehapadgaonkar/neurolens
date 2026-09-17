@@ -32,7 +32,24 @@ export const viewport: Viewport = {
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+      <head>
+        {/*
+          Runs before first paint to set the theme class.
+
+          This has to be an inline blocking script rather than an effect: if the
+          class were applied after hydration, a returning dark-mode user would
+          see a white flash on every navigation. Reading localStorage and the
+          media query here means the correct theme is on <html> before anything
+          renders. suppressHydrationWarning on <html> covers the class differing
+          from the server render.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem("neurolens-theme");var d=s?s==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;var r=document.documentElement;r.classList.toggle("dark",d);r.classList.toggle("light",!d);}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-screen antialiased">
         <StoreProvider>{children}</StoreProvider>
       </body>

@@ -94,6 +94,66 @@ function ProvenanceStrip() {
   );
 }
 
+/**
+ * Light/dark switch.
+ *
+ * The initial value is read from the DOM rather than from state, because the
+ * pre-paint script in app/layout.tsx has already resolved the stored preference
+ * (or the OS setting) onto <html>. Deriving it from useState's initial value
+ * instead would mismatch the server render and throw a hydration warning.
+ */
+function ThemeToggle() {
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    setDark(document.documentElement.classList.contains("dark"));
+  }, []);
+
+  const flip = () => {
+    const next = !dark;
+    setDark(next);
+    const root = document.documentElement;
+    root.classList.toggle("dark", next);
+    root.classList.toggle("light", !next);
+    try {
+      localStorage.setItem("neurolens-theme", next ? "dark" : "light");
+    } catch {
+      // Private browsing or a full quota: the toggle still works for this
+      // session, it just will not be remembered.
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={flip}
+      data-testid="theme-toggle"
+      aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
+      aria-pressed={dark}
+      title={dark ? "Switch to light theme" : "Switch to dark theme"}
+      className="rounded-[6px] border border-border-input p-1.5 text-ink-700 hover:bg-paper-50"
+    >
+      <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" aria-hidden="true">
+        {dark ? (
+          <path
+            d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M12.6 3.4l-1.1 1.1M4.5 11.5l-1.1 1.1"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+          />
+        ) : (
+          <path
+            d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8Z"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+        )}
+      </svg>
+    </button>
+  );
+}
+
 function RunSwitcher() {
   const { runs, runId, setRunId, report } = useStore();
   if (runs.length <= 1 && !report) return null;
@@ -214,9 +274,10 @@ export function Shell({ children }: { children: ReactNode }) {
                 <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
               </svg>
             </button>
-            <div className="min-w-0 flex-1">
-              <RunSwitcher />
-            </div>
+          <div className="min-w-0 flex-1">
+            <RunSwitcher />
+          </div>
+          <ThemeToggle />
             {report && (
               <div className="hidden items-center gap-2 lg:flex">
                 {report.cohort.dataset_access !== "open" && (
