@@ -11,7 +11,7 @@ loader in :mod:`neurolens.datasets` from files that actually exist on disk.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import pandas as pd
 

@@ -10,10 +10,9 @@ import pandas as pd
 import pytest
 
 from neurolens.config import NeuroLensConfig
-from neurolens.cohort import build_feature_builder, derive_groups, make_splits
+from neurolens.cohort import build_feature_builder, derive_groups
 from neurolens.datasets import load_cohort
 from neurolens.models import train_model
-from neurolens.schema import QCLedger
 
 
 pytestmark = pytest.mark.slow

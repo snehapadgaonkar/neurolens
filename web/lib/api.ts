@@ -91,14 +91,6 @@ export const fetchCases = (query: CaseQuery = {}) => {
 export const fetchCase = (patientId: string) =>
   get<CaseDetail>(`/api/case/${encodeURIComponent(patientId)}`);
 
-/**
- * Figures are addressed by their semantic key, not their file name: the report
- * maps `mitigation_tradeoff` to `figures/mitigation.png`, and the API resolves
- * that mapping.
- */
-export const figureUrl = (key: string, runId?: string) =>
-  `/api/figures/${encodeURIComponent(key)}.png${runId ? `?run=${encodeURIComponent(runId)}` : ""}`;
-
 export const artifactUrl = (name: string, runId?: string) =>
   `/api/artifact/${name.split("/").map(encodeURIComponent).join("/")}${
     runId ? `?run=${encodeURIComponent(runId)}` : ""

@@ -1,15 +1,9 @@
 // Assert the case screen renders real subgroup labels, not "undefined".
-const { JSDOM } = require("jsdom");
 const path = require("path");
 const esbuild = require("esbuild");
-const WEB = path.resolve(__dirname, "..", "..");
-const ORIGIN = "http://127.0.0.1:3000";
-const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: ORIGIN + "/", pretendToBeVisual: true });
-for (const [k,v] of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,Element:dom.window.Element,Node:dom.window.Node,SVGElement:dom.window.SVGElement,getComputedStyle:dom.window.getComputedStyle})) global[k]=v;
-global.requestAnimationFrame=(cb)=>setTimeout(()=>cb(Date.now()),0);
-global.IS_REACT_ACT_ENVIRONMENT=true;
-const nodeFetch=global.fetch;
-global.fetch=(i,init)=>nodeFetch(typeof i==="string"&&!i.startsWith("http")?ORIGIN+i:i,init);
+const { WEB, ORIGIN, setupDom, setupFetch } = require("./harness.cjs");
+setupDom();
+const nodeFetch = setupFetch();
 for (const l of ["error","warn"]) { const o=console[l].bind(console); console[l]=(...a)=>{const t=a.map(String).join(" ");if(!/act\(|fire events|assert on the output|ensures that you|wrap-tests-with-act/.test(t))o(...a);}; }
 (async()=>{
   const cases=(await (await nodeFetch(ORIGIN+"/api/cases?limit=200")).json()).cases;

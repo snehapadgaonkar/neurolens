@@ -5,31 +5,12 @@
  * DOM. This catches the failure the browser would show: a screen that mounts
  * but renders nothing because a field the UI reads is absent.
  */
-const { JSDOM } = require("jsdom");
 const path = require("path");
 const fs = require("fs");
 const esbuild = require("esbuild");
+const { WEB, ORIGIN, setupDom } = require("./harness.cjs");
 
-const WEB = path.resolve(__dirname, "..", "..");
-const ORIGIN = process.env.NEUROLENS_ORIGIN || "http://127.0.0.1:3000";
-
-const dom = new JSDOM("<!doctype html><html><body></body></html>", {
-  url: ORIGIN + "/",
-  pretendToBeVisual: true,
-});
-
-// --- browser globals the components rely on -------------------------------
-global.window = dom.window;
-global.document = dom.window.document;
-global.navigator = dom.window.navigator;
-global.HTMLElement = dom.window.HTMLElement;
-global.Element = dom.window.Element;
-global.Node = dom.window.Node;
-global.SVGElement = dom.window.SVGElement;
-global.getComputedStyle = dom.window.getComputedStyle;
-global.requestAnimationFrame = (cb) => setTimeout(() => cb(Date.now()), 0);
-global.cancelAnimationFrame = (id) => clearTimeout(id);
-global.IS_REACT_ACT_ENVIRONMENT = true;
+setupDom();
 
 // React reports NaN SVG attributes, missing keys and unknown props through
 // console.error/warn. Those are silent in a browser but mean a chart draws
@@ -49,14 +30,9 @@ for (const level of ["error", "warn"]) {
 }
 
 // Real fetch, pointed at the running app so requests traverse the same
-// /api/* proxy the browser uses. Capture the original before shadowing it,
-// otherwise the wrapper recurses into itself.
-const nodeFetch = global.fetch;
-global.fetch = (input, init) => {
-  const url = typeof input === "string" ? input : input.url;
-  const absolute = url.startsWith("http") ? url : ORIGIN + url;
-  return nodeFetch(absolute, init);
-};
+// /api/* proxy the browser uses.
+const { setupFetch } = require("./harness.cjs");
+const nodeFetch = setupFetch();
 
 // next/navigation is not available outside the router; the case screen reads
 // the patient id from useParams. Read it at call time so the harness can set

@@ -16,34 +16,12 @@
  * catch the class of bug that would otherwise make 98 tests fail for one
  * shared reason.
  */
-const { JSDOM } = require("jsdom");
 const path = require("path");
 const fs = require("fs");
 const esbuild = require("esbuild");
+const { WEB, ORIGIN, setupDom } = require("./harness.cjs");
 
-const WEB = path.resolve(__dirname, "..", "..");
-const ORIGIN = process.env.NEUROLENS_ORIGIN || "http://127.0.0.1:3000";
-
-const dom = new JSDOM("<!doctype html><html><body></body></html>", {
-  url: ORIGIN + "/",
-  pretendToBeVisual: true,
-});
-
-for (const [key, value] of Object.entries({
-  window: dom.window,
-  document: dom.window.document,
-  navigator: dom.window.navigator,
-  HTMLElement: dom.window.HTMLElement,
-  Element: dom.window.Element,
-  Node: dom.window.Node,
-  SVGElement: dom.window.SVGElement,
-  getComputedStyle: dom.window.getComputedStyle,
-})) {
-  global[key] = value;
-}
-global.requestAnimationFrame = (cb) => setTimeout(() => cb(Date.now()), 0);
-global.cancelAnimationFrame = (id) => clearTimeout(id);
-global.IS_REACT_ACT_ENVIRONMENT = true;
+setupDom();
 
 // Silence React's act() nag but keep genuine warnings visible.
 for (const level of ["error", "warn"]) {
@@ -56,8 +34,6 @@ for (const level of ["error", "warn"]) {
   };
 }
 
-const nodeFetch = global.fetch;
-
 /**
  * Fetch shim with a programmable failure policy.
  *
@@ -65,26 +41,13 @@ const nodeFetch = global.fetch;
  * so the hooks they assert on only exist in an error render. Reproducing that
  * here is the only way to verify them without a browser.
  */
-global.fetch = (input, init) => {
-  const url = typeof input === "string" ? input : input.url;
-  const absolute = url.startsWith("http") ? url : ORIGIN + url;
+const { setupFetch } = require("./harness.cjs");
+const nodeFetch = setupFetch((absolute) => {
+  // Read per request: the suite sets __FETCH_POLICY__ immediately before each
+  // failure-state render and clears it afterwards.
   const policy = globalThis.__FETCH_POLICY__;
-  if (policy) {
-    const override = policy(absolute);
-    if (override) {
-      // Node's own Response, not jsdom's: this jsdom build exposes no Response
-      // constructor, and constructing one threw, which made every stubbed
-      // failure surface as a network error instead of its real status.
-      return Promise.resolve(
-        new Response(JSON.stringify(override.body), {
-          status: override.status,
-          headers: { "content-type": "application/json" },
-        }),
-      );
-    }
-  }
-  return nodeFetch(absolute, init);
-};
+  return policy ? policy(absolute) : null;
+});
 
 const shimDir = __dirname;
 const navShim = path.join(shimDir, "nav-shim.js");

@@ -7,46 +7,18 @@
  * the stale column. This renders the REAL component and asserts that a
  * controlled `sort` prop now drives both.
  */
-const { JSDOM } = require("jsdom");
 const path = require("path");
 const fs = require("fs");
 const esbuild = require("esbuild");
+const { WEB, ORIGIN, setupDom, setupFetch } = require("./harness.cjs");
 
-const WEB = path.resolve(__dirname, "..", "..");
 const OUT = path.join(__dirname, "_sort-entry.tsx");
 const BUNDLE = path.join(__dirname, "_sort.cjs");
 
-const dom = new JSDOM("<!doctype html><html><body></body></html>", {
-  url: "http://127.0.0.1:3000/",
-  pretendToBeVisual: true,
-});
-
-for (const [key, value] of Object.entries({
-  window: dom.window,
-  document: dom.window.document,
-  navigator: dom.window.navigator,
-  HTMLElement: dom.window.HTMLElement,
-  Element: dom.window.Element,
-  Node: dom.window.Node,
-  SVGElement: dom.window.SVGElement,
-  getComputedStyle: dom.window.getComputedStyle,
-})) {
-  global[key] = value;
-}
-global.requestAnimationFrame = (cb) => setTimeout(() => cb(Date.now()), 0);
-global.cancelAnimationFrame = (id) => clearTimeout(id);
-global.IS_REACT_ACT_ENVIRONMENT = true;
-
-// The pages request relative URLs like /api/cases. Node's global fetch cannot
-// resolve those, so rewrite them against the live origin the way the other
-// render checks do.
-const ORIGIN = process.env.NEUROLENS_ORIGIN || "http://127.0.0.1:3000";
-const nodeFetch = global.fetch;
-global.fetch = (input, init) =>
-  nodeFetch(
-    typeof input === "string" && !input.startsWith("http") ? ORIGIN + input : input,
-    init,
-  );
+// Kept: the click simulations below need dom.window.MouseEvent, which jsdom
+// provides but Node does not.
+const dom = setupDom();
+const nodeFetch = setupFetch();
 
 const React = require("react");
 const { act } = React;

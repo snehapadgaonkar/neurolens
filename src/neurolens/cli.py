@@ -6,10 +6,10 @@ import argparse
 import json
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from neurolens import RESEARCH_USE_NOTICE, __version__
-from neurolens.config import NeuroLensConfig, config_from_dict
+from neurolens.config import NeuroLensConfig
 from neurolens.datasets import MANIFESTS, fetch_openneuro_tabular, resolve_manifest
 
 __all__ = ["main", "build_parser"]

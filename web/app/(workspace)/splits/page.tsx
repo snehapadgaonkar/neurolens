@@ -2,6 +2,7 @@
 
 import {
   Callout,
+  Card,
   Chip,
   Code,
   KeyValue,
@@ -150,13 +151,5 @@ export default function SplitsPage() {
         </Panel>
       </div>
     </>
-  );
-}
-
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <section className={`rounded-[10px] border border-ink-200 bg-paper shadow-[var(--shadow-1)] ${className}`}>
-      {children}
-    </section>
   );
 }

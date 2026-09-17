@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import json
 import os
-import platform
 import socket
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -48,7 +47,6 @@ from neurolens.evaluation import (
     risk_coverage,
     uncertainty_error_association,
 )
-from neurolens.evaluation import bootstrap_ci
 from neurolens.explain import CAUSATION_NOTICE, explain_case, permutation_importance
 from neurolens.fairness import (
     audit_axis,
@@ -415,8 +413,7 @@ class NeuroLensPipeline:
             return None
         preferred = [c for c in usable if c.get("mitigation") == "none"]
         pool = preferred or usable
-        key = "mae" if task == "continuous" else "macro_f1"
-        reverse = task != "continuous"
+
         def score(cell):
             if task == "continuous":
                 return cell["metrics"].get("mae", float("inf"))
@@ -629,7 +626,6 @@ class NeuroLensPipeline:
     def _assemble_report(self, **kwargs: Any) -> Dict[str, Any]:
         cfg = self.cfg
         cohort: CohortResult = kwargs["cohort"]
-        tables = kwargs["tables"]
         manifest = kwargs["manifest"]
         results = kwargs["results"]
         test: pd.DataFrame = kwargs["test"]
@@ -760,7 +756,6 @@ class NeuroLensPipeline:
         return report
 
     def _limitations(self, report: Dict[str, Any], manifest, cohort: CohortResult) -> List[str]:
-        cfg = self.cfg
         available = cohort.audit["modalities_available"]
         items = [
             "NeuroLens is a research prototype and is not clinically validated. Nothing here "

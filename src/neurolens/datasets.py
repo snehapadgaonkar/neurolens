@@ -39,7 +39,7 @@ from typing import Any, Dict, Iterable, List, Optional
 import numpy as np
 import pandas as pd
 
-from neurolens.schema import CohortTables, ICV_KEY, QCLedger, REGION_CATALOG
+from neurolens.schema import CohortTables, QCLedger, REGION_CATALOG
 
 __all__ = [
     "DatasetManifest",

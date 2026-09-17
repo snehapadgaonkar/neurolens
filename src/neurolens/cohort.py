@@ -392,7 +392,6 @@ def _index_and_outcome(tables: CohortTables, cfg: NeuroLensConfig,
     sessions["time_years"] = _to_numeric(sessions["time_years"]).fillna(0.0)
 
     index_sessions = sessions[sessions["session"].astype(str) == cfg.target.index_session]
-    outcome_sessions = sessions[sessions["session"].astype(str) == cfg.target.outcome_session]
     if index_sessions.empty:
         raise ValueError(
             f"no session labelled '{cfg.target.index_session}' in this dataset "
@@ -401,11 +400,6 @@ def _index_and_outcome(tables: CohortTables, cfg: NeuroLensConfig,
     index_sessions = index_sessions.sort_values("time_years").drop_duplicates(
         "patient_id", keep="first"
     )
-    outcome_map = (
-        outcome_sessions.sort_values("time_years").drop_duplicates("patient_id", keep="first")
-        .set_index("patient_id")
-    )
-
     clinical = tables.clinical.copy() if not tables.clinical.empty else pd.DataFrame()
     if not clinical.empty:
         clinical["patient_id"] = clinical["patient_id"].astype(str)

@@ -1,16 +1,10 @@
 // Mount the real Shell to confirm the persistent research banner + nav render.
-const { JSDOM } = require("jsdom");
 const path = require("path");
 const fs = require("fs");
 const esbuild = require("esbuild");
-const WEB = path.resolve(__dirname, "..", "..");
-const ORIGIN = "http://127.0.0.1:3000";
-const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: ORIGIN + "/", pretendToBeVisual: true });
-for (const [k,v] of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,Element:dom.window.Element,Node:dom.window.Node,SVGElement:dom.window.SVGElement,getComputedStyle:dom.window.getComputedStyle})) global[k]=v;
-global.requestAnimationFrame=(cb)=>setTimeout(()=>cb(Date.now()),0);
-global.IS_REACT_ACT_ENVIRONMENT=true;
-const nodeFetch=global.fetch;
-global.fetch=(i,init)=>nodeFetch(typeof i==="string"&&!i.startsWith("http")?ORIGIN+i:i,init);
+const { WEB, ORIGIN, setupDom, setupFetch } = require("./harness.cjs");
+setupDom();
+const nodeFetch = setupFetch();
 const shim=path.join(WEB,"scripts/render-check/nav-shim.js");
 const linkShim=path.join(WEB,"scripts/render-check/link-shim.js");
 const entrySrc=path.join(WEB,"scripts/render-check/_shell-entry.tsx");

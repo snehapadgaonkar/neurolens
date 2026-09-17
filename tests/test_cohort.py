@@ -4,13 +4,9 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from neurolens.cohort import (
-    FeatureBuilder,
     build_cohort,
-    build_feature_builder,
-    derive_groups,
     make_splits,
 )
 from neurolens.config import NeuroLensConfig
@@ -62,10 +58,7 @@ def test_features_never_contain_outcome_information(dlbs_cohort):
     assert "mmse_at_index" in dlbs_cohort.features.names()
 
 
-def test_target_is_annualised_mmse_change_with_decline_positive(dlbs_cohort, dlbs_dir):
-    from neurolens.datasets import load_cohort
-
-    tables = load_cohort("openneuro-ds004856", dlbs_dir)
+def test_target_is_annualised_mmse_change_with_decline_positive(dlbs_cohort):
     analysis = dlbs_cohort.analysis
     definition = dlbs_cohort.audit["target_definition"]
     assert definition["outcome_measure"] == "mmse"
@@ -202,5 +195,5 @@ def test_split_is_reproducible_across_processes(dlbs_dir):
         completed = subprocess.run([sys.executable, "-c", code], capture_output=True,
                                    text=True, env=environment, check=True)
         hashes.append(completed.stdout.strip())
-    assert hashes[0], f"child process produced no split hash"
+    assert hashes[0], "child process produced no split hash"
     assert hashes[0] == hashes[1], f"split depends on PYTHONHASHSEED: {hashes}"

@@ -17,7 +17,6 @@ import { expect, type Page } from "@playwright/test";
 
 /** Patient ids that are known to carry subgroup context in a seeded run. */
 export const CASE_WITH_SUBGROUPS = "sub-274";
-export const CASE_PLAIN = "sub-1139";
 /** Deliberately absent from every run — exercises the not-found path. */
 export const CASE_MISSING = "sub-0000000";
 

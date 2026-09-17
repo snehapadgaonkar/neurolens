@@ -12,7 +12,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from neurolens import RESEARCH_USE_NOTICE

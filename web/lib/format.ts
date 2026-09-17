@@ -19,14 +19,6 @@ export const fmtPct = (value: number | null | undefined, digits = 1): string => 
   return `${(value * 100).toFixed(digits)}%`;
 };
 
-export const fmtSigned = (value: number | null | undefined, digits = 3): string => {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  const text = fmt(Math.abs(value), digits);
-  if (value > 0) return `+${text}`;
-  if (value < 0) return `−${text}`;
-  return text;
-};
-
 /** Render a CI as "[a, b]" with an em dash when unavailable. */
 export const fmtCi = (
   ci: [number | null, number | null] | null | undefined,
@@ -67,34 +59,8 @@ export const runIdLabel = (runId: string): string => {
   })} · ${dataset}`;
 };
 
-export const titleCase = (value: string): string =>
-  value
-    .replace(/[_-]+/g, " ")
-    .replace(/\b[a-z]/g, (character) => character.toUpperCase());
-
 export const humanLabel = (value: string): string =>
   value.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
 
-/** Feature family -> colour role, kept in one place so charts and chips agree. */
-export type Family = "mri" | "genetics" | "clinical" | "demographic" | "other";
-
-export const familyOf = (value: string | undefined): Family => {
-  switch (value) {
-    case "mri":
-      return "mri";
-    case "genetics":
-      return "genetics";
-    case "clinical":
-      return "clinical";
-    case "demographic":
-      return "demographic";
-    default:
-      return "other";
-  }
-};
-
 export const shortHash = (value: string | undefined, length = 8): string =>
   value ? value.slice(0, length) : "—";
-
-export const pluralise = (count: number, singular: string, plural?: string): string =>
-  `${fmtInt(count)} ${count === 1 ? singular : (plural ?? `${singular}s`)}`;
