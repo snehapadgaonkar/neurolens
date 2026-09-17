@@ -45,7 +45,7 @@ For the richer Next.js workspace, run the API as above and then:
 cd web && npm install && npm run dev                # workspace on :3000
 ```
 
-`web/` proxies `/api/*` and `/static/*` to the API (override the target with
+`web/` proxies `/api/*` to the API (override the target with
 `NEUROLENS_API`), so the browser never addresses the backend directly.
 
 `run` writes a self-contained audit package to `runs/<run_id>/`:
@@ -129,46 +129,42 @@ degradation budget printed alongside the choice.
 
 ## Evidence workspace UI
 
-There are two front ends over the same read-only API. Neither duplicates the
-other's job: the built-in one needs no toolchain at all, the Next.js one is the
-fuller workspace.
+There is one front end over a read-only JSON API. `neurolens serve` on `:8000`
+is a pure API — it renders no HTML and hosts no pages — and the Next.js
+workspace on `:3000` is the only UI.
 
-**Built in** — `neurolens serve` also hosts a static single-page app at `/`: no
-npm, no bundler, hand-rolled SVG charts. Screens are grouped **Workspace /
-Build / Evaluate / Inspect / Release**, with a persistent research-use banner, a
-run switcher, and a provenance strip. Use this when you want the audit package
-open with nothing installed but the Python package.
+**Why only one.** The API used to also host a second, no-build single-page app.
+Two front ends reading the same report meant every field rename had to be made
+twice, and only one of them was covered by TypeScript. The workspace now owns
+the whole presentation layer, and `:8000` returns a JSON endpoint index at `/`
+so it stays useful to `curl` without being a website.
 
 **Next.js workspace** — `web/` is a Next.js 16 App Router app with 14 screens
-under the same nav grouping, including a per-patient case view at
-`/cases/[patientId]`. It proxies `/api/*` and `/static/*` to the API, so the
-browser only ever talks to the workspace origin.
+grouped **Workspace / Build / Evaluate / Inspect / Release**, with a persistent
+research-use banner, a run switcher, and a provenance strip, including a
+per-patient case view at `/cases/[patientId]`. It proxies `/api/*` to the API,
+so the browser only ever talks to the workspace origin.
 
-Both honour the same rules. Every subgroup metric shows n, CI, gap, and adequacy
-status; there is no composite fairness score. Charts have an accessible text
-summary and a data-table alternative. Responsive order is preserved at every
-width: research-use warning → reliability/OOD → prediction → interval →
-explanation → provenance → action.
+The workspace honours the audit rules throughout. Every subgroup metric shows n,
+CI, gap, and adequacy status; there is no composite fairness score. Charts have
+an accessible text summary and a data-table alternative. Responsive order is
+preserved at every width: research-use warning → reliability/OOD → prediction →
+interval → explanation → provenance → action.
 
-Four checks render real front-end code against a live API rather than fixtures.
-Three cover the Next.js workspace; the fourth covers the built-in static SPA,
-which shares the API and would break identically on a field rename:
+Three checks render real front-end code against a live API rather than fixtures:
 
 ```bash
 cd web
 npm run check:render      # all 14 Next.js screens render live data
 npm run check:shell       # shell chrome: banner, run switcher, nav
 npm run subgroup-check    # a case that actually has subgroup context
-npm run check:static      # all 13 static SPA screens, walked via its hash router
 ```
 
 `check:render` fails on React warnings (NaN SVG coordinates, duplicate keys) and
 on any literal `undefined` or `NaN` in the output — the silent symptom of a
-field name that does not match the API. `check:static` applies the same
-`undefined`/`NaN` rule to the static SPA and also fails if a screen throws.
+field name that does not match the API.
 
-`check:render`, `check:shell`, and `subgroup-check` need the Next.js dev server
-on `:3000`. `check:static` needs only `neurolens serve` on `:8000`.
+All three need the Next.js dev server on `:3000` and the API on `:8000`.
 
 ---
 
@@ -188,7 +184,7 @@ src/neurolens/
   reporting.py    figures, markdown/HTML, model card
   pipeline.py     orchestration and the audit report
   cli.py          command-line entry points
-  server/         FastAPI evidence workspace + static UI
+  server/         FastAPI read-only evidence API (JSON only, no UI)
 configs/          example configurations (open and HD pathways)
 notebooks/        Colab pipeline walkthrough
 scripts/          standalone smoke test
@@ -222,7 +218,6 @@ From `web/`, once the API is running:
 | `npm run check:render` | mount all 14 screens against a live API and assert real data |
 | `npm run check:shell` | assert the shell chrome renders (banner, run switcher, nav) |
 | `npm run subgroup-check` | assert subgroup labels on a case that has subgroup context |
-| `npm run check:static` | walk all 13 built-in static SPA screens against a live API |
 | `npm run check:selectors` | render the real components and assert every hook the e2e suite uses resolves |
 
 ### End-to-end tests (Playwright)

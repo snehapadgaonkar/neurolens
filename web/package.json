@@ -9,7 +9,6 @@
     "check:render": "node scripts/render-check/run.cjs",
     "check:shell": "node scripts/render-check/shell-check.cjs",
     "subgroup-check": "node scripts/render-check/subgroup-check.cjs",
-    "check:static": "node scripts/render-check/static-render.cjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:ci": "playwright test --retries=2 --reporter=github,html,list",

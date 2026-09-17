@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 
 import pytest
@@ -29,12 +30,39 @@ def test_health(client):
     assert "research prototype" in payload["research_use_notice"]
 
 
-def test_index_and_static_assets_are_served(client):
+def test_root_is_a_json_api_index_not_a_web_page(client):
+    """The API host must serve no UI.
+
+    `:8000` used to host a second, no-build single-page app alongside the
+    Next.js workspace. Two front ends reading the same report meant every field
+    rename had to be made twice, and only one of them was covered by types.
+    This asserts the API root describes the API instead.
+    """
     response = client.get("/")
     assert response.status_code == 200
-    assert "NeuroLens" in response.text
-    for asset in ("/static/styles.css", "/static/app.js"):
-        assert client.get(asset).status_code == 200
+    assert response.headers["content-type"].startswith("application/json")
+    payload = response.json()
+    assert payload["service"] == "neurolens-evidence-api"
+
+    # Every listed endpoint must actually exist, or the index is a lie.
+    # Compare against the route table rather than probing URLs: a templated
+    # path like /api/case/{patient_id} cannot be fetched without a real id,
+    # and a 404 there would say nothing about whether the route is registered.
+    # FastAPI's converter syntax ({name:path}) is stripped so the index can
+    # advertise the plain, human-readable form.
+    def canonical(path: str) -> str:
+        return re.sub(r"\{(\w+):\w+\}", r"{\1}", path)
+
+    registered = {canonical(r.path) for r in client.app.routes if hasattr(r, "path")}
+    for path in payload["endpoints"]:
+        assert path in registered, f"index advertises {path}, which is not a route"
+
+
+def test_no_static_frontend_is_served_by_the_api(client):
+    """Regression guard: the removed SPA must not come back."""
+    assert client.get("/static/app.js").status_code == 404
+    assert client.get("/static/styles.css").status_code == 404
+    assert client.get("/static/index.html").status_code == 404
 
 
 def test_runs_listing(client):

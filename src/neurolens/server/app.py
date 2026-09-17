@@ -1,8 +1,11 @@
 """Evidence-workspace API.
 
-Serves the artifacts of a completed NeuroLens run as JSON and hosts the static
-single-page UI. The server is read-only: it never mutates a run, so an audit
-package that has been reviewed cannot be changed behind a reviewer's back.
+Serves the artifacts of a completed NeuroLens run as JSON. This is a pure API:
+it renders no HTML and hosts no UI. The workspace in `web/` is the only front
+end, and it consumes these endpoints through its own proxy.
+
+The server is read-only: it never mutates a run, so an audit package that has
+been reviewed cannot be changed behind a reviewer's back.
 """
 
 from __future__ import annotations
@@ -13,12 +16,9 @@ from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 from neurolens import RESEARCH_USE_NOTICE
 from neurolens.datasets import MANIFESTS
-
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 GLOSSARY = [
     {"term": "Prediction interval",
@@ -326,10 +326,32 @@ def create_app(run_dir: Optional[str] = None, runs_root: str = "runs") -> FastAP
         return FileResponse(path, media_type=media, filename=os.path.basename(path))
 
     @app.get("/")
-    def index() -> FileResponse:
-        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    def index() -> Dict[str, Any]:
+        """Self-describing API root.
 
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+        This is deliberately JSON, not HTML. The server hosts no UI: the
+        workspace in `web/` is the only front end. Returning an endpoint index
+        here keeps `:8000` useful to a human with a browser or curl without
+        making it a second website.
+        """
+        return {
+            "service": "neurolens-evidence-api",
+            "description": "Read-only JSON API over the artifacts of a NeuroLens run.",
+            "frontend": "The workspace UI is served separately (Next.js). This host serves no pages.",
+            "research_use_notice": RESEARCH_USE_NOTICE,
+            "endpoints": {
+                "/api/health": "liveness, active run, research-use notice",
+                "/api/runs": "every run this server can see, newest first",
+                "/api/report": "the full audit report for a run",
+                "/api/cases": "per-patient predictions; supports sort, order, search, flagged_only",
+                "/api/case/{patient_id}": "one prediction with attribution and provenance",
+                "/api/datasets": "registered dataset manifests and access tiers",
+                "/api/glossary": "plain-language definitions of every term used",
+                "/api/figures/{name}": "a rendered figure from a run, as PNG",
+                "/api/artifact/{name}": "a raw run artifact, downloaded as an attachment",
+            },
+        }
+
     return app
 
 
