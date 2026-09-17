@@ -76,9 +76,17 @@ test.describe("Case explorer", () => {
     await expect(toggle).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("changing the sort key refetches with that key", async ({ page }) => {
-    // Assert the control drives the request, which is the contract with the API.
+  test("changing the sort key reorders the visible table, not just the request", async ({
+    page,
+  }) => {
     const errorSort = page.getByTestId("sort-error");
+
+    // Record the order the table actually renders before the change, so the
+    // assertion below compares observed output rather than trusting the request.
+    const orderBefore = await page
+      .locator("tbody tr")
+      .evaluateAll((rows) => rows.map((r) => r.querySelector("td")?.textContent?.trim()));
+
     const request = page.waitForRequest((req) =>
       /\/api\/cases\?.*sort=error/.test(req.url()),
     );
@@ -91,5 +99,35 @@ test.describe("Case explorer", () => {
       "aria-pressed",
       "false",
     );
+
+    // The regression this guards: the request used to carry sort=error while the
+    // table kept rendering its original order, because the page passed DataTable
+    // a fixed initialSort that was read once on mount.
+    const orderAfter = await page
+      .locator("tbody tr")
+      .evaluateAll((rows) => rows.map((r) => r.querySelector("td")?.textContent?.trim()));
+
+    expect(
+      orderAfter.join(","),
+      "the visible row order must change when the sort key changes",
+    ).not.toBe(orderBefore.join(","));
+
+    // And the rendered column must genuinely be sorted, which is what a screen
+    // reader user is told by aria-sort. The attribute lives on the <th>, so
+    // target the header cell containing the sort button.
+    await expect(
+      page.locator("th").filter({ has: page.getByTestId("sort-header-error") }),
+    ).toHaveAttribute("aria-sort", "descending");
+
+    const errors = await page
+      .locator("tbody tr td:nth-child(5)")
+      .evaluateAll((cells) => cells.map((c) => parseFloat(c.textContent ?? "")));
+    expect(errors.length).toBeGreaterThan(1);
+    for (let i = 1; i < errors.length; i++) {
+      expect(
+        errors[i],
+        `|Error| column must be descending (row ${i + 1} vs row ${i})`,
+      ).toBeLessThanOrEqual(errors[i - 1]);
+    }
   });
 });

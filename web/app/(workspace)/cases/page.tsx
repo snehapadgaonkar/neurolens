@@ -4,20 +4,44 @@ import { useEffect, useMemo, useState } from "react";
 import { ScatterWithIntervals } from "@/components/charts";
 import { DataTable, type Column } from "@/components/table";
 import { Button, Callout, Chip, Metric, MetricGrid, PageHeader, Panel } from "@/components/ui";
-import { fetchCases } from "@/lib/api";
+import { fetchCases, type CaseSortKey } from "@/lib/api";
 import { fmt, fmtCi, fmtInt } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { CaseRow } from "@/lib/types";
 
 type Row = CaseRow & Record<string, unknown>;
-type SortKey = "uncertainty" | "error" | "patient_id";
+
+/** Every column the case table can be sorted by (its `Column.key`). */
+type ColumnSortKey =
+  | "uncertainty"
+  | "error"
+  | "patient_id"
+  | "truth"
+  | "prediction"
+  | "ood";
+
+/**
+ * Column key -> `/api/cases` `sort` parameter. The two differ for OOD, so this
+ * is an explicit map rather than passing the column key straight through.
+ */
+const API_SORT: Record<ColumnSortKey, CaseSortKey> = {
+  uncertainty: "uncertainty",
+  error: "error",
+  patient_id: "patient_id",
+  truth: "truth",
+  prediction: "prediction",
+  ood: "ood_score",
+};
 
 export default function CasesPage() {
   const { report } = useStore();
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [flaggedOnly, setFlaggedOnly] = useState(false);
-  const [sort, setSort] = useState<SortKey>("uncertainty");
+  const [sort, setSort] = useState<{ key: ColumnSortKey; direction: "asc" | "desc" }>({
+    key: "uncertainty",
+    direction: "desc",
+  });
   const [cases, setCases] = useState<CaseRow[] | null>(null);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -31,7 +55,13 @@ export default function CasesPage() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchCases({ search: query || undefined, flaggedOnly, sort, order: "desc", limit: 200 })
+    fetchCases({
+      search: query || undefined,
+      flaggedOnly,
+      sort: API_SORT[sort.key],
+      order: sort.direction,
+      limit: 200,
+    })
       .then((response) => {
         if (cancelled) return;
         setCases(response.cases);
@@ -166,18 +196,30 @@ export default function CasesPage() {
                 ["uncertainty", "Uncertainty"],
                 ["error", "Error"],
                 ["patient_id", "Patient"],
-              ] as [SortKey, string][]
-            ).map(([key, label]) => (
-              <Button
-                key={key}
-                active={sort === key}
-                data-testid={`sort-${key}`}
-                aria-pressed={sort === key}
-                onClick={() => setSort(key)}
-              >
-                {label}
-              </Button>
-            ))}
+              ] as [ColumnSortKey, string][]
+            ).map(([key, label]) => {
+              const active = sort.key === key;
+              return (
+                <Button
+                  key={key}
+                  active={active}
+                  data-testid={`sort-${key}`}
+                  aria-pressed={active}
+                  onClick={() =>
+                    // Re-clicking the active column flips its direction, which
+                    // is what the column headers do too.
+                    setSort((current) =>
+                      current.key === key
+                        ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
+                        : { key, direction: "desc" },
+                    )
+                  }
+                >
+                  {label}
+                  {active ? (sort.direction === "asc" ? " ↑" : " ↓") : ""}
+                </Button>
+              );
+            })}
           </div>
           <p className="mt-3 text-body-sm text-ink-600" data-testid="case-count">
             {loading
@@ -252,7 +294,10 @@ export default function CasesPage() {
             columns={columns}
             rows={(cases ?? []) as Row[]}
             rowKey={(row) => row.patient_id}
-            initialSort={{ key: "uncertainty", direction: "desc" }}
+            sort={sort}
+            onSortChange={(next) =>
+              setSort({ key: next.key as ColumnSortKey, direction: next.direction })
+            }
             emptyLabel={loading ? "Loading cases…" : "No cases match the current filter."}
             caption="Held-out case predictions"
             summary={`Table of ${fmtInt(

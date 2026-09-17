@@ -38,6 +38,8 @@ export function DataTable<Row extends Record<string, unknown>>({
   rows,
   rowKey,
   initialSort,
+  sort: controlledSort,
+  onSortChange,
   emptyLabel = "Nothing to show.",
   caption,
   summary,
@@ -48,6 +50,14 @@ export function DataTable<Row extends Record<string, unknown>>({
   rows: Row[];
   rowKey: (row: Row) => string;
   initialSort?: { key: string; direction: "asc" | "desc" };
+  /**
+   * Controlled sort state. When supplied the table no longer owns sorting, so a
+   * page-level control and the column headers stay in step instead of fighting
+   * over the row order.
+   */
+  sort?: { key: string; direction: "asc" | "desc" } | null;
+  /** Called when a column header is clicked; required alongside `sort`. */
+  onSortChange?: (next: { key: string; direction: "asc" | "desc" }) => void;
   emptyLabel?: string;
   caption?: string;
   /** Accessible text alternative for the table's content. */
@@ -55,7 +65,10 @@ export function DataTable<Row extends Record<string, unknown>>({
   dense?: boolean;
   onRowClick?: (row: Row) => void;
 }) {
-  const [sort, setSort] = useState<SortState>(initialSort ?? null);
+  const [internalSort, setInternalSort] = useState<SortState>(initialSort ?? null);
+  // `controlledSort` may legitimately be null (unsorted), so test for undefined
+  // rather than truthiness before deferring to internal state.
+  const sort = controlledSort === undefined ? internalSort : controlledSort;
 
   const active = columns.find((column) => column.key === sort?.key && column.sortable);
   const sorted = (() => {
@@ -73,12 +86,21 @@ export function DataTable<Row extends Record<string, unknown>>({
     });
   })();
 
-  const toggle = (key: string) =>
-    setSort((current) =>
-      current?.key === key
-        ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
-        : { key, direction: "asc" },
-    );
+  const toggle = (key: string) => {
+    const next = {
+      key,
+      direction: (sort?.key === key
+        ? sort.direction === "asc"
+          ? "desc"
+          : "asc"
+        : "asc") as "asc" | "desc",
+    };
+    if (onSortChange) {
+      onSortChange(next);
+    } else {
+      setInternalSort(next);
+    }
+  };
 
   if (!rows.length) {
     return (

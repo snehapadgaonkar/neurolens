@@ -25,7 +25,22 @@ export async function mount(){
   document.body.appendChild(host);
   const root=createRoot(host);
   await act(async()=>{root.render(createElement(StoreProvider,null,createElement(Shell,null,createElement("main",null,"content"))));});
-  for(let i=0;i<30;i++){await act(async()=>{await new Promise(r=>setTimeout(r,50));});if(host.textContent.length>300)break;}
+  // Wait for the tree to STOP changing rather than to exceed a length. The
+  // previous length threshold broke out of this loop before the report fetch
+  // settled, and RunSwitcher renders nothing while it has one run and no report
+  // -- so the switcher label assertion failed intermittently depending on how
+  // quickly the API answered, not on whether the component was correct.
+  let previous = "";
+  let stable = 0;
+  for (let i = 0; i < 60; i += 1) {
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    const now = host.textContent || "";
+    if (now === previous && now.length > 0) {
+      stable += 1;
+      if (stable >= 3) break;
+    } else stable = 0;
+    previous = now;
+  }
   const t=host.textContent||""; root.unmount(); return t;
 }`);
 (async()=>{

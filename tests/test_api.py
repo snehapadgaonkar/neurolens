@@ -80,6 +80,63 @@ def test_cases_endpoint_and_filters(client):
     assert "total" in client.get("/api/cases?flagged_only=true").json()
 
 
+def test_cases_endpoint_sorting_actually_reorders(client):
+    """Regression: `sort` used to be accepted and then silently ignored.
+
+    The client sent sort=error and got back the default order, so the case
+    table's "Sort by" control appeared to work while changing nothing.
+    """
+    def order(sort, order_="desc"):
+        rows = client.get(f"/api/cases?sort={sort}&order={order_}&limit=500").json()["cases"]
+        return [r["patient_id"] for r in rows]
+
+    # Each key must produce its own ordering, not the same default one.
+    by_uncertainty = order("uncertainty")
+    by_error = order("error")
+    by_patient = order("patient_id")
+    assert by_uncertainty != by_error
+    assert by_uncertainty != by_patient
+    assert len(by_uncertainty) == len(by_error)
+
+    # And the values must really be in the claimed order.
+    unc = [r["uncertainty"] for r in
+           client.get("/api/cases?sort=uncertainty&order=desc&limit=500").json()["cases"]]
+    assert unc == sorted(unc, reverse=True)
+    asc = [r["uncertainty"] for r in
+           client.get("/api/cases?sort=uncertainty&order=asc&limit=500").json()["cases"]]
+    assert asc == sorted(asc)
+    # Ascending and descending must be genuine mirrors of each other, and both
+    # must cover the same patients -- sorting may reorder rows, never lose them.
+    assert asc == list(reversed(unc))
+    assert asc == sorted(unc)
+
+    # "error" is derived from |prediction - truth| rather than stored.
+    err = [abs(r["prediction"] - r["truth"]) for r in
+           client.get("/api/cases?sort=error&order=desc&limit=500").json()["cases"]]
+    assert err == sorted(err, reverse=True)
+
+
+def test_cases_endpoint_rejects_unknown_sort_and_order(client):
+    """An unrecognised key must fail loudly, not return unsorted rows."""
+    bad_sort = client.get("/api/cases?sort=not-a-column")
+    assert bad_sort.status_code == 400
+    assert "unknown sort key" in bad_sort.json()["detail"]
+
+    bad_order = client.get("/api/cases?order=sideways")
+    assert bad_order.status_code == 400
+    assert "unknown order" in bad_order.json()["detail"]
+
+    # Omitting them entirely is still valid and returns the default order.
+    assert client.get("/api/cases?limit=5").status_code == 200
+
+
+def test_cases_sorting_is_declared_in_the_openapi_schema(client):
+    """Guard the contract the browser depends on: sort/order must be advertised."""
+    schema = client.get("/openapi.json").json()
+    params = {p["name"] for p in schema["paths"]["/api/cases"]["get"]["parameters"]}
+    assert {"sort", "order"}.issubset(params)
+
+
 def test_case_endpoint_returns_prediction_uncertainty_and_caveats(client):
     patient = client.get("/api/cases?limit=1").json()["cases"][0]["patient_id"]
     payload = client.get(f"/api/case/{patient}").json()

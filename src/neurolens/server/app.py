@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
@@ -179,10 +179,41 @@ def create_app(run_dir: Optional[str] = None, runs_root: str = "runs") -> FastAP
             "predictions", [])[:5]
         return payload
 
+    # Sort keys the case table exposes. "error" is derived rather than stored,
+    # so it needs its own accessor instead of a plain field lookup.
+    CASE_SORTS: Dict[str, Callable[[Dict[str, Any]], Any]] = {
+        "patient_id": lambda r: str(r.get("patient_id", "")),
+        "truth": lambda r: r.get("truth"),
+        "prediction": lambda r: r.get("prediction"),
+        "uncertainty": lambda r: r.get("uncertainty"),
+        "ood_score": lambda r: r.get("ood_score"),
+        "interval_width": lambda r: r.get("interval_width"),
+        "error": lambda r: (
+            None
+            if r.get("prediction") is None or r.get("truth") is None
+            else abs(float(r["prediction"]) - float(r["truth"]))
+        ),
+    }
+
     @app.get("/api/cases")
     def cases(run: Optional[str] = None,
               flagged_only: bool = False, search: Optional[str] = None,
+              sort: Optional[str] = None, order: str = "desc",
               limit: int = 200, offset: int = 0) -> Dict[str, Any]:
+        # Reject unknown keys loudly. Silently ignoring an unrecognised sort is
+        # what let this endpoint advertise sorting it never performed, so a
+        # caller's mistake must surface as an error, not as unchanged rows.
+        if sort is not None and sort not in CASE_SORTS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"unknown sort key {sort!r}; expected one of "
+                       f"{', '.join(sorted(CASE_SORTS))}",
+            )
+        if order not in ("asc", "desc"):
+            raise HTTPException(
+                status_code=400, detail=f"unknown order {order!r}; expected 'asc' or 'desc'"
+            )
+
         payload = _report(run)
         rows = list(payload["tasks"]["continuous"].get("predictions", []))
         if flagged_only:
@@ -192,6 +223,26 @@ def create_app(run_dir: Optional[str] = None, runs_root: str = "runs") -> FastAP
         if search:
             needle = search.lower()
             rows = [r for r in rows if needle in str(r.get("patient_id", "")).lower()]
+
+        if sort is not None:
+            accessor = CASE_SORTS[sort]
+            reverse = order == "desc"
+            # Missing values sort last regardless of direction, so ascending and
+            # descending are genuine mirrors of each other rather than both
+            # parking the same nulls at the top.
+            rows = sorted(
+                rows,
+                key=lambda r: (accessor(r) is None, accessor(r) if accessor(r) is not None else 0,
+                               str(r.get("patient_id", ""))),
+                reverse=reverse,
+            )
+            # A reverse sort would drag the nulls to the front; put them back at
+            # the end so "missing" always reads as the tail of the table.
+            if reverse:
+                present = [r for r in rows if accessor(r) is not None]
+                missing = [r for r in rows if accessor(r) is None]
+                rows = present + missing
+
         total = len(rows)
         return {"total": total, "offset": offset, "limit": limit,
                 "cases": rows[offset:offset + limit]}

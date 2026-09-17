@@ -55,3 +55,7 @@ web/scripts/render-check/_selector-entry.tsx
 /web/playwright-report/
 /web/test-results/
 /web/.playwright/
+web/scripts/render-check/_sort.cjs
+web/scripts/render-check/_sort-entry.tsx
+web/scripts/render-check/_sort-page.cjs
+web/scripts/render-check/_sort-page-entry.tsx

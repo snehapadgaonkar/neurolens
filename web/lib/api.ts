@@ -54,10 +54,24 @@ export const fetchDatasets = () =>
 
 export const fetchGlossary = () => get<{ terms: GlossaryTerm[] }>("/api/glossary");
 
+/**
+ * Sort keys `/api/cases` accepts. These mirror the server's own allow-list, and
+ * the server rejects anything outside it with a 400 rather than silently
+ * returning unsorted rows.
+ */
+export type CaseSortKey =
+  | "uncertainty"
+  | "error"
+  | "patient_id"
+  | "truth"
+  | "prediction"
+  | "ood_score"
+  | "interval_width";
+
 export interface CaseQuery {
   search?: string;
   flaggedOnly?: boolean;
-  sort?: "uncertainty" | "error" | "patient_id";
+  sort?: CaseSortKey;
   order?: "asc" | "desc";
   limit?: number;
   offset?: number;
